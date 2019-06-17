@@ -1,0 +1,10 @@
+{
+  "generator-percipio": {
+    "promptValues": {
+      "percipioService": "Common",
+      "percipioServiceCommon": "GET /v1/organizations/{orgId}/audiences",
+      "percipiomain": "Content Discovery Service",
+      "percipioServiceFeatures": "GET /v1/organizations/{orgId}/catalog-content"
+    }
+  }
+}
