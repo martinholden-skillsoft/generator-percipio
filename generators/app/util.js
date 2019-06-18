@@ -58,6 +58,50 @@ const parameterDescriptionString = parameter => {
   return description.join('\r\n');
 };
 
+const propertyDescriptionString = (property, propertyName, basepath, path) => {
+  const description = [];
+  const pathString = path ? `${_.trimEnd(path, '.')}.` : '';
+  const basepathString = basepath ? `${_.trimEnd(basepath, '.')}.` : '';
+  description.push('/**');
+  description.push(` * Name: ${propertyName}`);
+  if (property.description) {
+    description.push(` * Description: ${property.description}`);
+  }
+  description.push(` * Type: ${property.type}`);
+  if (property.format) {
+    description.push(` * Format: ${property.format}`);
+  }
+  if (property.enum) {
+    description.push(` * Enum: ${property.enum}`);
+  }
+  if (property.example) {
+    description.push(` * Example: ${property.example}`);
+  }
+
+  description.push(' */');
+
+  const name = `${basepathString}${pathString}${_.trim(propertyName)}`;
+  let val = property.default ? property.default : null;
+  if (property.type === 'string') {
+    val = val ? `'${val}'` : null;
+  }
+  if (property.type === 'object') {
+    val = '{}';
+  }
+
+  description.push(`${name} = ${val};`);
+  description.push('');
+  // Process recursive
+  if (property.type === 'object') {
+    const objProperties = _.map(property.properties, (currentValue, index) => {
+      return propertyDescriptionString(currentValue, index, basepathString, propertyName);
+    }).join('');
+    description.push(objProperties);
+  }
+  return description.join('\r\n');
+};
+
 module.exports = {
-  parameterDescriptionString
+  parameterDescriptionString,
+  propertyDescriptionString
 };

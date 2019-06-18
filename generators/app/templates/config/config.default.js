@@ -25,13 +25,13 @@ config.request.bearer = process.env.CUSTOMER_BEARER || null;
 config.request.baseuri = 'https://api.percipio.com';
 // Request Path Parameters
 config.request.path = {};
-<%= options.pathStrings %>
+<%- options.pathStrings %>
 // Request Query string Parameters
 config.request.query = {};
-<%= options.queryStrings %>
+<%- options.queryStrings %>
 // Request Body
-const payload = null;
-config.request.body = payload ? JSON.parse(payload) : null;
+<%- options.payloadString %>
+<%- options.payloadPropertyStrings %>
 // Method
 config.request.method = '<%= options.percipioServiceMethod %>';
 // The Service Path

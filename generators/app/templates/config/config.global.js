@@ -41,8 +41,7 @@ config.request.path.orgId = null;
 // Request Query string Parameters
 config.request.query = {};
 // Request Body
-const payload = null;
-config.request.body = payload ? JSON.parse(payload) : null;
+config.request.body = null;
 // Method
 config.request.method = '<%= options.percipioServiceMethod %>';
 // The Service Path

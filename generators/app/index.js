@@ -5,7 +5,7 @@ const glob = require('glob');
 const _ = require('lodash');
 const Swagger = require('swagger-client');
 
-const { parameterDescriptionString } = require('./util');
+const { parameterDescriptionString, propertyDescriptionString } = require('./util');
 
 module.exports = class extends Generator {
   constructor(args, opts) {
@@ -201,6 +201,22 @@ module.exports = class extends Generator {
         return o.in === 'query';
       }),
       parameterDescriptionString
+    ).join('');
+
+    this.options.payloadString = _.isNil(this.options.percipioServicePayload)
+      ? 'config.request.body = null;'
+      : 'config.request.body = {};';
+
+    this.options.payloadPropertyStrings = _.map(
+      this.options.percipioServicePayload,
+      (currentValue, index) => {
+        return propertyDescriptionString(
+          currentValue,
+          index,
+          'config.request.body',
+          null
+        );
+      }
     ).join('');
 
     // shared across all generators
