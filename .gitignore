@@ -79,3 +79,4 @@ typings/
 .deployment
 .vscode/launch.json
 .vscode/settings.json
+.yo-rc.json

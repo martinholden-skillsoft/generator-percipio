@@ -3,8 +3,8 @@
     "promptValues": {
       "percipioService": "Common",
       "percipioServiceCommon": "GET /v1/organizations/{orgId}/audiences",
-      "percipiomain": "Content Discovery Service",
-      "percipioServiceFeatures": "GET /v1/organizations/{orgId}/catalog-content"
+      "percipiomain": "User Management Service",
+      "percipioServiceFeatures": "PATCH /v1/organizations/{orgId}/users/{id}"
     }
   }
 }
