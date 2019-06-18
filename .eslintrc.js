@@ -1,5 +1,4 @@
 module.exports = {
-  plugins: ['mocha'],
   extends: ['airbnb-base', 'plugin:prettier/recommended'],
   env: {
     es6: true,
@@ -19,7 +18,6 @@ module.exports = {
         ignoreTemplateLiterals: true,
         ignoreRegExpLiterals: true
       }
-    ],
-    'mocha/no-exclusive-tests': 'error'
+    ]
   }
 };
