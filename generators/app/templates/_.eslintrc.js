@@ -1,5 +1,5 @@
 module.exports = {
-  extends: ['airbnb-base', 'plugin:prettier/recommended'],
+  extends: ['airbnb-base', 'plugin:prettier/recommended', 'prettier'],
   env: {
     es6: true,
     node: true
@@ -18,6 +18,9 @@ module.exports = {
         ignoreTemplateLiterals: true,
         ignoreRegExpLiterals: true
       }
-    ]
-  }
+    ],
+    'no-underscore-dangle': ['error', { allowAfterThis: true }]
+  },
+  parser: 'babel-eslint'
 };
+

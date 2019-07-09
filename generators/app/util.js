@@ -1,4 +1,11 @@
 const _ = require('lodash');
+const wrap = require('word-wrap');
+
+const wrapOptions = {
+  width: 90,
+  indent: ' * ',
+  trim: true
+};
 
 /**
  * Return a string description for the parameter
@@ -11,7 +18,7 @@ const parameterDescriptionString = parameter => {
   description.push(` * Name: ${parameter.name}`);
 
   if (parameter.description) {
-    description.push(` * Description: ${parameter.description}`);
+    description.push(`${wrap(`Description : ${parameter.description}`, wrapOptions)}`);
   }
 
   if (parameter.required) {
@@ -65,7 +72,7 @@ const propertyDescriptionString = (property, propertyName, basepath, path) => {
   description.push('/**');
   description.push(` * Name: ${propertyName}`);
   if (property.description) {
-    description.push(` * Description: ${property.description}`);
+    description.push(`${wrap(`Description : ${property.description}`, wrapOptions)}`);
   }
   description.push(` * Type: ${property.type}`);
   if (property.format) {

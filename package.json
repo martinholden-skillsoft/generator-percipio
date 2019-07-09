@@ -30,22 +30,20 @@
 		"chalk": "^2.1.0",
 		"glob": "^7.1.4",
 		"lodash": "^4.17.11",
-		"mkdirp": "^0.5.1",
 		"swagger-client": "^3.9.0",
-		"yeoman-generator": "^2.0.1"
+		"word-wrap": "^1.2.3",
+		"yeoman-generator": "^4.0.1"
 	},
 	"devDependencies": {
-		"auto-changelog": "^1.13.0",
-		"babel-eslint": "^10.0.1",
-		"eslint": "^5.3.0",
-		"eslint-config-airbnb-base": "^13.1.0",
-		"eslint-config-prettier": "^4.3.0",
-		"eslint-plugin-import": "^2.14.0",
+		"auto-changelog": "^1.14.1",
+		"babel-eslint": "^10.0.2",
+		"eslint": "^6.0.1",
+		"eslint-config-airbnb-base": "^13.2.0",
+		"eslint-config-prettier": "^6.0.0",
+		"eslint-plugin-import": "^2.18.0",
 		"eslint-plugin-mocha": "^5.3.0",
 		"eslint-plugin-prettier": "^3.0.1",
 		"prettier": "^1.16.4",
-		"rimraf": "^2.6.3",
-		"yeoman-assert": "^3.1.0",
-		"yeoman-test": "^1.7.0"
+		"rimraf": "^2.6.3"
 	}
 }

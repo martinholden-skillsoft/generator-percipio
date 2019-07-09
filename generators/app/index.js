@@ -123,7 +123,10 @@ module.exports = class extends Generator {
     ];
 
     return this.prompt(prompt).then(response => {
-      this.options.dirname = this.slugify(response.dirname);
+      const dirName = path.dirname(response.dirname);
+      const fileName = this.slugify(path.basename(response.dirname));
+
+      this.options.dirname = path.join(dirName, fileName);
     });
   }
 
@@ -176,9 +179,10 @@ module.exports = class extends Generator {
       this.appname = this.options.dirname;
     }
 
-    this.options.percipioServiceFullPath = `${
-      this.options.percipiospec.servers[0].url
-    }${_.replace(
+    this.options.percipioServiceFullPath = `${_.trimEnd(
+      this.options.percipiospec.servers[0].url,
+      `/`
+    )}${_.replace(
       this.options.percipioServicePath,
       /{/g,
       // eslint-disable-next-line no-template-curly-in-string

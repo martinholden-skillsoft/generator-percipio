@@ -1,7 +1,3 @@
-/*
-eslint linebreak-style: ["error", "windows"]
-*/
-
 const axios = require('axios');
 const fs = require('fs');
 const Path = require('path');
@@ -144,10 +140,7 @@ const main = async configOptions => {
     );
 
     if (result) {
-      logger.info(
-        'Setting Proxy Configuration so requests are sent via Fiddler',
-        loggingOptions
-      );
+      logger.info('Setting Proxy Configuration so requests are sent via Fiddler', loggingOptions);
 
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 
@@ -174,13 +167,15 @@ const main = async configOptions => {
     return false;
   }
 
-  callPercipio(options)
+  logger.info('Calling Percipio', loggingOptions);
+  await callPercipio(options)
     .then(response => {
       logger.info(`Response: ${JSON.stringify(response.data)}`, loggingOptions);
     })
     .catch(err => {
       logger.error(`Error:  ${err}`, loggingOptions);
     });
+  logger.info(`End ${module.exports.name}`, loggingOptions);
   return true;
 };
 
