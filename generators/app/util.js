@@ -5,8 +5,10 @@ const wrapOptions = {
   width: 90,
   indent: ' * ',
   trim: true,
-  newline: '\n',
+  newline: '\n * ',
 };
+
+const regexSplit = /\s*(?:,|$)\s*/;
 
 /**
  * Return a string description for the parameter
@@ -30,7 +32,15 @@ const parameterDescriptionString = (parameter) => {
     if (parameter.schema.type === 'array') {
       description.push(` * Type: ${parameter.schema.items.type}[]`);
       if (parameter.schema.items.enum) {
-        description.push(` * Enum: ${parameter.schema.items.enum}`);
+        if (Array.isArray(parameter.schema.items.enum)) {
+          description.push(
+            `${wrap(`Enum: ${parameter.schema.items.enum.join(', ')}`, wrapOptions)}`
+          );
+        }
+        if (typeof parameter.schema.items.enum === 'string') {
+          const enumList = parameter.schema.items.enum.split(regexSplit).join(' ,');
+          description.push(`${wrap(`Enum: ${enumList}`, wrapOptions)}`);
+        }
       }
     } else {
       description.push(` * Type: ${parameter.schema.type}`);
@@ -80,7 +90,13 @@ const propertyDescriptionString = (property, propertyName, basepath, path) => {
     description.push(` * Format: ${property.format}`);
   }
   if (property.enum) {
-    description.push(` * Enum: ${property.enum}`);
+    if (Array.isArray(property.enum)) {
+      description.push(`${wrap(`Enum: ${property.enum.join(', ')}`, wrapOptions)}`);
+    }
+    if (typeof property.enum === 'string') {
+      const enumList = property.enum.split(regexSplit).join(' ,');
+      description.push(`${wrap(`Enum: ${enumList}`, wrapOptions)}`);
+    }
   }
   if (property.example) {
     description.push(` * Example: ${property.example}`);
