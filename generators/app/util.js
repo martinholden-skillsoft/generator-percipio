@@ -4,7 +4,7 @@ const wrap = require('word-wrap');
 const wrapOptions = {
   width: 90,
   indent: ' * ',
-  trim: true
+  trim: true,
 };
 
 /**
@@ -12,7 +12,7 @@ const wrapOptions = {
  *
  * @param {object} parameter
  */
-const parameterDescriptionString = parameter => {
+const parameterDescriptionString = (parameter) => {
   const description = [];
   description.push('/**');
   description.push(` * Name: ${parameter.name}`);
@@ -110,5 +110,5 @@ const propertyDescriptionString = (property, propertyName, basepath, path) => {
 
 module.exports = {
   parameterDescriptionString,
-  propertyDescriptionString
+  propertyDescriptionString,
 };
