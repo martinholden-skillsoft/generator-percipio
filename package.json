@@ -1,6 +1,6 @@
 {
 	"name": "generator-percipio",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "Yeoman Generator for calling Percipio API using Axios",
 	"author": {
 		"name": "Martin Holden",
