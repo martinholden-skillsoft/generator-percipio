@@ -4,7 +4,7 @@
 	"description": "Call a Percipio API",
 	"repository": {
 		"type": "git",
-		"url": "git+ssh://git@github.com/YOURGITHUBACCOUNT/YOURGITHUBREPOcd.git"
+		"url": "git+ssh://git@github.com/<%= options.name %>/<%= options.packagename %>.git"
 	},
 	"main": "app.js",
 	"scripts": {
@@ -20,26 +20,26 @@
 		"skillsoft",
 		"percipio"
 	],
-	"author": "Martin Holden &lt;martin.holden@skillsoft.com&gt;",
+	"author": "<%= options.email %>",
 	"license": "MIT",
 	"dependencies": {
-		"axios": "^0.19.0",
+		"axios": "^0.19.2",
 		"global-tunnel-ng": "^2.7.1",
-		"lodash": "^4.17.11",
+		"lodash": "^4.17.15",
 		"moment": "^2.24.0",
 		"pkginfo": "^0.4.1",
 		"promise-retry": "^1.1.1",
 		"winston": "^3.2.1"
 	},
 	"devDependencies": {
-		"auto-changelog": "^1.14.1",
+		"auto-changelog": "^1.16.4",
 		"babel-eslint": "^10.0.2",
-		"eslint": "^6.0.1",
-		"eslint-config-airbnb-base": "^14.0.0",
-		"eslint-config-prettier": "^6.0.0",
-		"eslint-plugin-import": "^2.18.0",
-		"eslint-plugin-prettier": "^3.1.0",
-		"prettier": "^1.18.2",
-		"rimraf": "^3.0.0"
+		"eslint": "^6.8.0",
+		"eslint-config-airbnb-base": "^14.1.0",
+		"eslint-config-prettier": "^6.10.1",
+		"eslint-plugin-import": "^2.20.2",
+		"eslint-plugin-prettier": "^3.1.2",
+		"prettier": "^2.0.4",
+		"rimraf": "^3.0.2"
 	}
 }

@@ -5,6 +5,7 @@ const wrapOptions = {
   width: 90,
   indent: ' * ',
   trim: true,
+  newline: '\n',
 };
 
 /**
@@ -62,7 +63,7 @@ const parameterDescriptionString = (parameter) => {
   val = val === null && parameter.schema.default ? parameter.schema.default : val;
   description.push(`${name} = ${val};`);
   description.push('');
-  return description.join('\r\n');
+  return description.join('\n');
 };
 
 const propertyDescriptionString = (property, propertyName, basepath, path) => {
@@ -105,7 +106,7 @@ const propertyDescriptionString = (property, propertyName, basepath, path) => {
     }).join('');
     description.push(objProperties);
   }
-  return description.join('\r\n');
+  return description.join('\n');
 };
 
 module.exports = {

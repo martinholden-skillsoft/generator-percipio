@@ -1,7 +1,3 @@
-/*
-eslint linebreak-style: ["error", "windows"]
-*/
-
 const fs = require('fs');
 const axios = require('axios');
 const moment = require('moment');
@@ -11,7 +7,7 @@ const moment = require('moment');
  *
  * @param {*} fullPath
  */
-const makeFolder = fullPath => {
+const makeFolder = (fullPath) => {
   const path = fullPath.replace(/\/$/, '').split('/');
   for (let i = 1; i <= path.length; i += 1) {
     const segment = path.slice(0, i).join('/');
@@ -27,7 +23,7 @@ const makeFolder = fullPath => {
  * @param {*} bytes
  * @returns string
  */
-const bytesToSize = bytes => {
+const bytesToSize = (bytes) => {
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   if (bytes === 0) return '0 Byte';
   const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
@@ -66,26 +62,13 @@ const getStartDate = (timeFrame, input = null) => {
 
   switch (timeFrame) {
     case 'DAY':
-      return theMoment
-        .subtract(24, 'hours')
-        .utc()
-        .format();
+      return theMoment.subtract(24, 'hours').utc().format();
     case 'WEEK':
-      return theMoment
-        .subtract(7, 'days')
-        .utc()
-        .format();
+      return theMoment.subtract(7, 'days').utc().format();
     case 'THIRTY_DAYS':
-      return theMoment
-        .subtract(30, 'days')
-        .utc()
-        .format();
+      return theMoment.subtract(30, 'days').utc().format();
     case 'CALENDAR_MONTH':
-      return theMoment
-        .subtract(1, 'months')
-        .startOf('month')
-        .utc()
-        .format();
+      return theMoment.subtract(1, 'months').startOf('month').utc().format();
     default:
       return '';
   }
@@ -106,12 +89,7 @@ const getEndDate = (timeFrame, input = null) => {
     case 'THIRTY_DAYS':
       return theMoment.utc().format();
     case 'CALENDAR_MONTH':
-      return theMoment
-        .add(-1, 'months')
-        .endOf('month')
-        .endOf('day')
-        .utc()
-        .format();
+      return theMoment.add(-1, 'months').endOf('month').endOf('day').utc().format();
     default:
       return '';
   }
@@ -122,5 +100,5 @@ module.exports = {
   bytesToSize,
   isFiddlerRunning,
   getStartDate,
-  getEndDate
+  getEndDate,
 };

@@ -20,10 +20,10 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
  * @param {*} options
  * @returns
  */
-const callPercipio = async options => {
+const callPercipio = async (options) => {
   return promiseRetry(async (retry, numberOfRetries) => {
     const loggingOptions = {
-      label: 'callPercipio'
+      label: 'callPercipio',
     };
 
     const requestUri = options.request.uri;
@@ -43,9 +43,9 @@ const callPercipio = async options => {
     const axiosConfig = {
       url: requestUri,
       headers: {
-        Authorization: `Bearer ${options.request.bearer}`
+        Authorization: `Bearer ${options.request.bearer}`,
       },
-      method: options.request.method
+      method: options.request.method,
     };
 
     if (!_.isEmpty(requestBody)) {
@@ -91,9 +91,9 @@ const callPercipio = async options => {
  * @param {*} options
  * @returns
  */
-const main = async configOptions => {
+const main = async (configOptions) => {
   const loggingOptions = {
-    label: 'main'
+    label: 'main',
   };
 
   const options = configOptions || null;
@@ -122,8 +122,8 @@ const main = async configOptions => {
     new transports.File({
       filename: Path.join(options.debug.logpath, options.debug.logFile),
       options: {
-        flags: 'w'
-      }
+        flags: 'w',
+      },
     })
   );
 
@@ -146,7 +146,7 @@ const main = async configOptions => {
 
       globalTunnel.initialize({
         host: options.debug.fiddlerAddress,
-        port: options.debug.fiddlerPort
+        port: options.debug.fiddlerPort,
       });
     }
   } else {
@@ -169,10 +169,10 @@ const main = async configOptions => {
 
   logger.info('Calling Percipio', loggingOptions);
   await callPercipio(options)
-    .then(response => {
+    .then((response) => {
       logger.info(`Response: ${JSON.stringify(response.data)}`, loggingOptions);
     })
-    .catch(err => {
+    .catch((err) => {
       logger.error(`Error:  ${err}`, loggingOptions);
     });
   logger.info(`End ${module.exports.name}`, loggingOptions);

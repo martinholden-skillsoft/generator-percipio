@@ -11,6 +11,25 @@ module.exports = class extends Generator {
   constructor(args, opts) {
     super(args, opts);
 
+    let userName;
+    let userEmail;
+
+    if (typeof this.user.git.name === 'function') {
+      userName = this.user.git.name();
+    } else {
+      userName = this.user.git.name;
+    }
+
+    if (typeof this.user.git.email === 'function') {
+      userEmail = this.user.git.email();
+    } else {
+      userEmail = this.user.git.email;
+    }
+
+    this.options.name = userName || 'unknownuser';
+    this.options.email =
+      userName && userEmail ? `${userName} <${userEmail}>` : 'User <user@example.com>';
+
     // add option to skip install
     this.option('skip-install');
 
