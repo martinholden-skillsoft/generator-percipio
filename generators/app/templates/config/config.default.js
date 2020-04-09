@@ -1,4 +1,4 @@
-﻿const config = require('./config.global');
+const config = require('./config.global');
 
 config.customer = 'default';
 

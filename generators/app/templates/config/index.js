@@ -1,4 +1,4 @@
-﻿const configSettings = process.env.CONFIG || 'default';
+const configSettings = process.env.CONFIG || 'default';
 
 const configFile = `config.${configSettings}`;
 const configPath = `./${configFile}`;
