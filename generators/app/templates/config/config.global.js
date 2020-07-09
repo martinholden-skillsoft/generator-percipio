@@ -6,15 +6,8 @@ const config = {};
 config.customer = 'none';
 config.startTimestamp = moment().utc().format('YYYYMMDD_HHmmss');
 
-// DEBUG Options - Enables the check for Fiddler, if running the traffic is routed thru Fiddler
+// DEBUG Options
 config.debug = {};
-// Check for fiddler
-config.debug.checkFiddler = false;
-// Fiddler IP address
-config.debug.fiddlerAddress = '127.0.0.1';
-// Fiddler Port
-config.debug.fiddlerPort = '8888';
-// Debug logging
 // One of the supported default logging levels for winston - see https://github.com/winstonjs/winston#logging-levels
 config.debug.loggingLevel = 'info';
 config.debug.logpath = 'logs';
