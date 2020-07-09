@@ -2,7 +2,7 @@ module.exports = {
   extends: ['airbnb-base', 'plugin:prettier/recommended'],
   env: {
     es6: true,
-    node: true
+    node: true,
   },
   rules: {
     'max-len': [
@@ -16,8 +16,8 @@ module.exports = {
         ignoreUrls: true,
         ignoreStrings: true,
         ignoreTemplateLiterals: true,
-        ignoreRegExpLiterals: true
-      }
-    ]
-  }
+        ignoreRegExpLiterals: true,
+      },
+    ],
+  },
 };
