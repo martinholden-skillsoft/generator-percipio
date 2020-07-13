@@ -60,11 +60,6 @@ module.exports = class extends Generator {
             return error;
           }
         ),
-        Swagger('https://api.percipio.com/content-integration/swagger.json').catch(
-          (error) => {
-            return error;
-          }
-        ),
         Swagger('https://api.percipio.com/reporting/swagger.json').catch((error) => {
           return error;
         }),

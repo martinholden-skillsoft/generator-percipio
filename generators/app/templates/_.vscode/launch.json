@@ -12,8 +12,8 @@
       "outputCapture": "std",
       "env": {
         "NODE_ENV": "PRODUCTION",
-        "CUSTOMER_ORGID": "YOURORGID",
-        "CUSTOMER_BEARER": "YOURBEARER"
+        "ORGID": "YOURORGID",
+        "BEARER": "YOURBEARER"
       }
     },
     {
@@ -24,8 +24,8 @@
       "outputCapture": "std",
       "env": {
         "NODE_ENV": "DEVELOPMENT",
-        "CUSTOMER_ORGID": "YOURORGID",
-        "CUSTOMER_BEARER": "YOURBEARER"
+        "ORGID": "YOURORGID",
+        "BEARER": "YOURBEARER"
       }
     }
   ]

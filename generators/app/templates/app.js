@@ -132,14 +132,14 @@ const main = async (configOptions) => {
 
   if (_.isNull(options.request.orgId)) {
     logger.error(
-      'Invalid configuration - no orgid in config file or set env CUSTOMER_ORGID',
+      'Invalid configuration - no orgid in config file or set env ORGID',
       loggingOptions
     );
     return false;
   }
 
   if (_.isNull(options.request.bearer)) {
-    logger.error('Invalid configuration - no bearer or set env CUSTOMER_BEARER', loggingOptions);
+    logger.error('Invalid configuration - no bearer or set env BEARER', loggingOptions);
     return false;
   }
 

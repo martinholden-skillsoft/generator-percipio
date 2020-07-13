@@ -67,7 +67,7 @@ const parameterDescriptionString = (parameter) => {
   const name = `config.request.${_.trim(parameter.in)}.${_.trim(parameter.name)}`;
   let val =
     parameter.in === 'path' && parameter.name === 'orgId'
-      ? 'process.env.CUSTOMER_ORGID || null'
+      ? 'process.env.ORGID || null'
       : null;
 
   val = val === null && parameter.schema.default ? parameter.schema.default : val;

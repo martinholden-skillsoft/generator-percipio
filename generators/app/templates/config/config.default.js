@@ -11,7 +11,7 @@ config.debug.logFile = `${config.customer}.log`;
 // Request
 config.request = {};
 // Bearer Token
-config.request.bearer = process.env.CUSTOMER_BEARER || null;
+config.request.bearer = process.env.BEARER || null;
 // Base URI to Percipio API
 config.request.baseuri = 'https://api.percipio.com';
 // Request Path Parameters
