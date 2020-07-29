@@ -149,7 +149,7 @@ const getAllPages = async (options) => {
         keepGoing = false;
       }
     }
-    resolve({ response: { data: records } });
+    resolve({ data: records });
   });
 };
 <% } _%>
