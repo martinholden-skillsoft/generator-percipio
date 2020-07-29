@@ -1,5 +1,9 @@
 # generator-percipio
-> Generator for calling Percipio API using Axios
+Generator for creating Node application to call a selected Percipio API using Axios.
+
+If the API returns a paged data set, the application will download all available pages of data.
+
+The JSON response of the API call will be logged to file.
 
 ## Installation
 
@@ -31,6 +35,8 @@ You will be prompted to:
 
 One the generator has completed running you will need to configure the parameters for the API call in the ```config/config.default.js``` file.
 
+The config file will list all the configurable parameters and include derscriptions from the OpeanAPI definition.
+
 ## Getting To Know Yeoman
 
  * Yeoman has a heart of gold.
@@ -40,4 +46,4 @@ One the generator has completed running you will need to configure the parameter
 
 ## License
 
-MIT © Martin Holden
+MIT © Martin Holden 2019-2020
