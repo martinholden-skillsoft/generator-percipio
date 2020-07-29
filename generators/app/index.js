@@ -180,6 +180,17 @@ module.exports = class extends Generator {
         'schema',
         'properties',
       ]);
+
+      // Check if this is pagable response.
+      // We examine the query parameters for parameters named max or offset or pagingRequestId
+      // If any of these exist we flag as a pagable API
+      this.options.percipioServiceIsPaged =
+        _.filter(this.options.percipioServiceParameters, (o) => {
+          return (
+            o.in === 'query' &&
+            (o.name === 'max' || o.name === 'offset' || o.name === 'pagingRequestId')
+          );
+        }).length > 0;
     });
   }
 
