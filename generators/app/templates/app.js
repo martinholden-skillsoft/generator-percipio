@@ -84,6 +84,75 @@ const callPercipio = async (options) => {
   }, options.retry_options);
 };
 
+<% if (options.percipioServiceIsPaged) { _%>
+/**
+ * Loop thru calling the API until all pages are delivered.
+ *
+ * @param {*} options
+ * @returns {string} json file path
+ */
+const getAllPages = async (options) => {
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise(async (resolve, reject) => {
+    const loggingOptions = {
+      label: 'getAllPages',
+    };
+
+    const opts = options;
+
+    let records = [];
+
+    let keepGoing = true;
+    let reportCount = true;
+    let totalRecords = 0;
+    let downloadedRecords = 0;
+
+    while (keepGoing) {
+      let response = null;
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        response = await callPercipio(opts);
+
+        if (reportCount) {
+          totalRecords = parseInt(response.headers['x-total-count'], 10);
+          opts.request.query.pagingRequestId = response.headers['x-paging-request-id'];
+
+          logger.info(
+            `Total Records to download as reported in header['x-total-count'] ${totalRecords.toLocaleString()}`,
+            loggingOptions
+          );
+
+          logger.info(
+            `Paging request id in header['x-paging-request-id'] ${opts.request.query.pagingRequestId}`,
+            loggingOptions
+          );
+          reportCount = false;
+        }
+      } catch (err) {
+        logger.error('ERROR: trying to download results', loggingOptions);
+        keepGoing = false;
+        reject(err);
+      }
+      records = [...records, ...response.data];
+
+      downloadedRecords += response.data.length;
+
+      logger.info(
+        `Records Downloaded ${downloadedRecords.toLocaleString()} of ${totalRecords.toLocaleString()}`,
+        loggingOptions
+      );
+
+      // Set offset - number of records in response
+      opts.request.query.offset += response.data.length;
+
+      if (opts.request.query.offset >= totalRecords) {
+        keepGoing = false;
+      }
+    }
+    resolve({ response: { data: records } });
+  });
+};
+<% } _%>
 /**
  * Process the Percipio call
  *
@@ -110,16 +179,23 @@ const main = async (configOptions) => {
   }
 
   // Create logging folder if one does not exist
-  if (!_.isNull(options.debug.logpath)) {
-    if (!fs.existsSync(options.debug.logpath)) {
-      mkdirp.sync(options.debug.logpath);
+  if (!_.isNull(options.debug.path)) {
+    if (!fs.existsSync(options.debug.path)) {
+      mkdirp.sync(options.debug.path);
+    }
+  }
+
+  // Create output folder if one does not exist
+  if (!_.isNull(options.output.path)) {
+    if (!fs.existsSync(options.output.path)) {
+      mkdirp.sync(options.output.path);
     }
   }
 
   // Add logging to a file
   logger.add(
     new transports.File({
-      filename: Path.join(options.debug.logpath, options.debug.logFile),
+      filename: Path.join(options.debug.path, options.debug.filename),
       options: {
         flags: 'w',
       },
@@ -144,13 +220,25 @@ const main = async (configOptions) => {
   }
 
   logger.info('Calling Percipio', loggingOptions);
+
+<% if (options.percipioServiceIsPaged) { _%>
+  // Percipio API returns a paged response, so retrieve all pages
+  await getAllPages(options)
+    .then((response) => {
+<% } else { _%>
   await callPercipio(options)
     .then((response) => {
-      logger.info(`Response: ${JSON.stringify(response.data)}`, loggingOptions);
+<% } _%>
+      // Write the results to file.
+      const outputFile = Path.join(options.output.path, options.output.filename);
+      fs.writeFileSync(outputFile, JSON.stringify(response.data, null, '  '));
+
+      logger.info(`Response saved to: ${outputFile}`, loggingOptions);
     })
     .catch((err) => {
       logger.error(`Error:  ${err}`, loggingOptions);
     });
+
   logger.info(`End ${module.exports.name}`, loggingOptions);
   return true;
 };

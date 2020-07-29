@@ -10,8 +10,13 @@ config.startTimestamp = moment().utc().format('YYYYMMDD_HHmmss');
 config.debug = {};
 // One of the supported default logging levels for winston - see https://github.com/winstonjs/winston#logging-levels
 config.debug.loggingLevel = 'info';
-config.debug.logpath = 'logs';
-config.debug.logFile = `app_${config.startTimestamp}.log`;
+config.debug.path = 'logs';
+config.debug.filename = `app_${config.startTimestamp}.log`;
+
+// Default for for saving the JSON output
+config.output = {};
+config.output.path = 'results';
+config.output.filename = `response_${config.startTimestamp}.json`;
 
 // Request
 config.request = {};

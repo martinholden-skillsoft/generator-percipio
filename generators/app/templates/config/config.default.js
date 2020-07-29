@@ -5,8 +5,12 @@ config.customer = 'default';
 // Debug logging
 // One of the supported default logging levels for winston - see https://github.com/winstonjs/winston#logging-levels
 // config.debug.loggingLevel = 'debug';
-config.debug.logpath = 'results/output';
-config.debug.logFile = `${config.customer}.log`;
+config.debug.path = 'results/output';
+config.debug.filename = `${config.customer}.log`;
+
+// Default for for saving the JSON output
+config.output.path = 'results/output';
+config.output.filename = `response_${config.startTimestamp}.json`;
 
 // Request
 config.request = {};
