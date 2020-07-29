@@ -43,7 +43,7 @@ module.exports = class extends Generator {
       name: 'percipiomain',
       message: 'Select the Percipio API to use:',
       choices: [],
-      store: true,
+      store: false,
     };
 
     this.options.spec = {};
@@ -93,7 +93,7 @@ module.exports = class extends Generator {
                 name: 'percipioServiceFeatures',
                 message: 'Select the Percipio Function:',
                 choices,
-                store: true,
+                store: false,
               };
             }
           });
@@ -201,6 +201,8 @@ module.exports = class extends Generator {
 
   writing() {
     // create directory
+    this.destinationRoot(this.contextRoot);
+
     if (this.options.createDirectory) {
       this.destinationRoot(this.options.dirname);
       this.appname = this.options.dirname;
