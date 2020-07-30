@@ -30,14 +30,15 @@
 		"chalk": "^4.1.0",
 		"glob": "^7.1.6",
 		"lodash": "^4.17.19",
-		"swagger-client": "^3.10.11",
+		"mkdirp": "^1.0.4",
+		"swagger-client": "^3.10.12",
 		"word-wrap": "^1.2.3",
 		"yeoman-generator": "^4.11.0"
 	},
 	"devDependencies": {
 		"auto-changelog": "^2.2.0",
 		"babel-eslint": "^10.0.1",
-		"eslint": "^7.4.0",
+		"eslint": "^7.5.0",
 		"eslint-config-airbnb-base": "^14.2.0",
 		"eslint-config-prettier": "^6.11.0",
 		"eslint-plugin-import": "^2.22.0",
