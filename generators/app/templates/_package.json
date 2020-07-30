@@ -20,7 +20,7 @@
     "skillsoft",
     "percipio"
   ],
-  "author": "<%= options.email %>",
+  "author": "<%= options.author %>",
   "license": "MIT",
   "dependencies": {
     "axios": "^0.19.2",

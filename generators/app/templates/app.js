@@ -11,7 +11,7 @@ const { transports } = require('winston');
 const logger = require('./lib/logger');
 const configuration = require('./config');
 
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const NODE_ENV = process.env.NODE_ENV || 'production';
 
 /**
  * Call Percipio API
@@ -208,14 +208,14 @@ const main = async (configOptions) => {
 
   if (_.isNull(options.request.orgId)) {
     logger.error(
-      'Invalid configuration - no orgid in config file or set env ORGID',
+      'Invalid configuration - no orgid in config file or env ORGID',
       loggingOptions
     );
     return false;
   }
 
   if (_.isNull(options.request.bearer)) {
-    logger.error('Invalid configuration - no bearer or set env BEARER', loggingOptions);
+    logger.error('Invalid configuration - no bearer in config file or env BEARER', loggingOptions);
     return false;
   }
 

@@ -1,9 +1,11 @@
+/* eslint-disable no-underscore-dangle */
 const path = require('path');
 const Generator = require('yeoman-generator');
 const chalk = require('chalk');
 const glob = require('glob');
 const _ = require('lodash');
 const Swagger = require('swagger-client');
+const mkdirp = require('mkdirp');
 
 const { parameterDescriptionString, propertyDescriptionString } = require('./util');
 
@@ -27,8 +29,13 @@ module.exports = class extends Generator {
     }
 
     this.options.name = userName || 'unknownuser';
-    this.options.email =
-      userName && userEmail ? `${userName} <${userEmail}>` : 'User <user@example.com>';
+    this.options.email = userEmail || 'user@example.com';
+    this.options.author = `${this.options.name} <${this.options.email}>`;
+
+    // Set currentfolder.
+    this.destinationRoot(this.contextRoot);
+
+    this.appname = 'percipioclient';
 
     // add option to skip install
     this.option('skip-install');
@@ -107,46 +114,29 @@ module.exports = class extends Generator {
     });
   }
 
-  dir() {
-    if (this.options.createDirectory !== undefined) {
-      return true;
-    }
-
-    const prompt = [
-      {
-        type: 'confirm',
-        name: 'createDirectory',
-        message: 'Would you like to create a new directory for your project?',
-      },
-    ];
-
-    return this.prompt(prompt).then((response) => {
-      this.options.createDirectory = response.createDirectory;
-    });
-  }
-
-  dirname() {
-    if (!this.options.createDirectory || this.options.dirname) {
-      return true;
-    }
-
+  _askForAppName() {
     const prompt = [
       {
         type: 'input',
-        name: 'dirname',
-        message: 'Enter directory name',
+        name: 'appname',
+        message: 'Enter app name',
+        default: this.appname,
       },
     ];
 
     return this.prompt(prompt).then((response) => {
-      const dirName = path.dirname(response.dirname);
-      const fileName = this.slugify(path.basename(response.dirname));
-
-      this.options.dirname = path.join(dirName, fileName);
+      this.appname = this.slugify(response.appname);
+      if (path.basename(this.destinationRoot()) !== this.appname) {
+        this.log(
+          `Your client must be inside a folder named ${this.appname}\nI'll automatically create this folder.`
+        );
+        mkdirp(this.appname);
+        this.destinationRoot(this.appname);
+      }
     });
   }
 
-  percipioService() {
+  _askForPercipioService() {
     if (this.options.percipioService) {
       return true;
     }
@@ -157,7 +147,7 @@ module.exports = class extends Generator {
     });
   }
 
-  percipioServiceFeatures() {
+  _askForPercipioServiceFeatures() {
     const myprompt = this.options.prompts[this.options.percipiomain];
     return this.prompt(myprompt).then((resp) => {
       const values = _.split(resp.percipioServiceFeatures, ' ');
@@ -197,17 +187,14 @@ module.exports = class extends Generator {
   prompting() {
     // Have Yeoman greet the user.
     this.log(`Welcome to the fine ${chalk.red('generator-percipio')} generator!`);
+    return this._askForAppName()
+      .then(this._askForPercipioService.bind(this))
+      .then(this._askForPercipioServiceFeatures.bind(this));
   }
 
-  writing() {
-    // create directory
-    this.destinationRoot(this.contextRoot);
+  // configuring() {}
 
-    if (this.options.createDirectory) {
-      this.destinationRoot(this.options.dirname);
-      this.appname = this.options.dirname;
-    }
-
+  default() {
     this.options.percipioServiceFullPath = `${_.trimEnd(
       this.options.percipiospec.servers[0].url,
       `/`
@@ -252,8 +239,14 @@ module.exports = class extends Generator {
       }
     ).join('');
 
+    // Percipio API Selected
+    this.options.percipioServicename = this.options.percipiospec.info.description;
+
     // shared across all generators
     this.sourceRoot(path.join(__dirname, 'templates'));
+  }
+
+  writing() {
     glob.sync('**', { cwd: this.sourceRoot() }).forEach((file) => {
       this.fs.copyTpl(
         this.templatePath(file),
@@ -263,7 +256,16 @@ module.exports = class extends Generator {
     });
   }
 
+  // conflicts() {}
+
   install() {
     if (!this.options['skip-install']) this.installDependencies({ bower: false });
+  }
+
+  end() {
+    this.log(`Thanks for using the ${chalk.red('generator-percipio')} generator`);
+    this.log(`Your app is ready, in ${chalk.green(this.destinationRoot())}.`);
+    this.log(`Don't forget to configure the ORGID and BEARER env values.`);
+    this.log(`Then you can run the app using ${chalk.yellow('npm start')}`);
   }
 };
