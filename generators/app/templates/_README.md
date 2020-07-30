@@ -1,5 +1,5 @@
 # <%= options.packagename %>
-Call Percipio <%= options.percipioServicename %> API using Axios.
+Call <%= options.percipioServicename %> API using Axios.
 
 Function: <%= options.percipioServicePath %>
 

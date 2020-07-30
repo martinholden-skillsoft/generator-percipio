@@ -1,7 +1,7 @@
 {
   "name": "<%= options.packagename %>",
   "version": "0.0.0",
-  "description": "Call a Percipio API",
+  "description": "Call <%= options.percipioServicename %> API using Axios. Function: <%= options.percipioServicePath %>",
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/<%= options.name %>/<%= options.packagename %>.git"
