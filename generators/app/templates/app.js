@@ -207,10 +207,7 @@ const main = async (configOptions) => {
   logger.debug(`Options: ${JSON.stringify(options)}`, loggingOptions);
 
   if (_.isNull(options.request.orgId)) {
-    logger.error(
-      'Invalid configuration - no orgid in config file or env ORGID',
-      loggingOptions
-    );
+    logger.error('Invalid configuration - no orgid in config file or env ORGID', loggingOptions);
     return false;
   }
 
@@ -231,7 +228,13 @@ const main = async (configOptions) => {
 <% } _%>
       // Write the results to file.
       const outputFile = Path.join(options.output.path, options.output.filename);
-      fs.writeFileSync(outputFile, JSON.stringify(response.data, null, '  '));
+      let outputData = response.data;
+      // Check if the response is an Object and if so JSON.stringify the output
+      if (_.isObject(outputData)) {
+        outputData = JSON.stringify(response.data, null, '  ');
+      }
+
+      fs.writeFileSync(outputFile, outputData);
 
       logger.info(`Response saved to: ${outputFile}`, loggingOptions);
     })
