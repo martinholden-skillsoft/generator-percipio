@@ -44,6 +44,7 @@ module.exports = class extends Generator {
   }
 
   initializing() {
+    this.log(`Initializing the ${chalk.red('generator-percipio')} generator!`);
     this.options.prompts = {};
     this.options.prompts.percipiomain = {
       type: 'list',
@@ -56,6 +57,8 @@ module.exports = class extends Generator {
     this.options.spec = {};
 
     this.options.servicePrompts = {};
+
+    this.log(`Downloading OpenAPI definitions for Percipio.`);
 
     return new Promise((resolve, reject) => {
       Promise.all([
@@ -77,11 +80,13 @@ module.exports = class extends Generator {
         ),
       ])
         .then((values) => {
+          this.log(`Downloaded all OpenAPI definitions.`);
           // We capture any errors so we dont fail, we will reject if we dont have ANY successes
           // Build the main list of services
 
           _.forEach(values, (value) => {
             if (value.spec) {
+              this.log(`Processing ${chalk.green(value.spec.info.title)} Definition.`);
               this.options.prompts.percipiomain.choices.push(value.spec.info.title);
               this.options.spec[this.slugify(value.spec.info.title.toLowerCase())] =
                 value.spec;
@@ -186,7 +191,7 @@ module.exports = class extends Generator {
 
   prompting() {
     // Have Yeoman greet the user.
-    this.log(`Welcome to the fine ${chalk.red('generator-percipio')} generator!`);
+    this.log(`Lets gets started with the ${chalk.red('generator-percipio')} generator!`);
     return this._askForAppName()
       .then(this._askForPercipioService.bind(this))
       .then(this._askForPercipioServiceFeatures.bind(this));
