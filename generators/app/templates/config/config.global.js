@@ -23,7 +23,9 @@ config.request = {};
 // Bearer Token
 config.request.bearer = null;
 // Base URI to Percipio API
-config.request.baseuri = 'https://api.percipio.com';
+config.request.baseuri = process.env.EUDC
+  ? 'https://dew1-api.percipio.com'
+  : 'https://api.percipio.com';
 // Request Path Parameters
 config.request.path = {};
 /**

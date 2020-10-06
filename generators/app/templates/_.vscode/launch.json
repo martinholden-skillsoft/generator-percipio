@@ -27,6 +27,32 @@
         "ORGID": "YOURORGID",
         "BEARER": "YOURBEARER"
       }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch (PRODUCTION EUDC)",
+      "program": "${workspaceFolder}/app.js",
+      "outputCapture": "std",
+      "env": {
+        "NODE_ENV": "PRODUCTION",
+        "ORGID": "YOURORGID",
+        "BEARER": "YOURBEARER",
+        "EUDC": "1"
+      }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch (DEVELOPMENT EUDC)",
+      "program": "${workspaceFolder}/app.js",
+      "outputCapture": "std",
+      "env": {
+        "NODE_ENV": "DEVELOPMENT",
+        "ORGID": "YOURORGID",
+        "BEARER": "YOURBEARER",
+        "EUDC": "1"
+      }
     }
   ]
 }

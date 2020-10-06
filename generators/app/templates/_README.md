@@ -18,6 +18,7 @@ Once you have copied this repository set the following NODE ENV variables:
 | --- | --- | --- |
 | ORGID | Required | This is the Percipio Organiation UUID for your Percipio Site. |
 | BEARER | Required | This is the Percipio Bearer token for the Service Account. |
+| EUDC | Optional | This is set to any non null value to indicate the Organization is hosted in EU Datacenter. Default: null |
 
 ## Configuring the API call
 Make the config changes in the appropriate [config/config.default.js](config/config.default.js) file, to specify the request criteria for the API.
