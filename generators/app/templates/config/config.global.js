@@ -20,6 +20,13 @@ config.output.filename = `response_${config.startTimestamp}.json`;
 
 // Request
 config.request = {};
+// Timeout
+// Timeout
+<% if (options.percipioServiceIsPaged) { _%>
+config.request.timeout = 20000;
+<% } else { _%>
+config.request.timeout = 2000;
+<% } _%>
 // Bearer Token
 config.request.bearer = null;
 // Base URI to Percipio API

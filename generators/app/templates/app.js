@@ -4,6 +4,7 @@ const Path = require('path');
 const _ = require('lodash');
 const mkdirp = require('mkdirp');
 const promiseRetry = require('promise-retry');
+const delve = require('dlv');
 // eslint-disable-next-line no-unused-vars
 const pkginfo = require('pkginfo')(module);
 
@@ -45,6 +46,7 @@ const callPercipio = async (options) => {
         Authorization: `Bearer ${options.request.bearer}`,
       },
       method: options.request.method,
+      timeout: options.request.timeout || 2000,
     };
 
     if (!_.isEmpty(requestBody)) {
@@ -60,7 +62,7 @@ const callPercipio = async (options) => {
     try {
       const response = await axios.request(axiosConfig);
       logger.debug(`Response Headers: ${JSON.stringify(response.headers)}`, loggingOptions);
-      logger.debug(`Response Body: ${JSON.stringify(response.data)}`, loggingOptions);
+      // logger.debug(`Response Body: ${JSON.stringify(response.data)}`, loggingOptions);
 
       return response;
     } catch (err) {
@@ -109,44 +111,51 @@ const getAllPages = async (options) => {
 
     while (keepGoing) {
       let response = null;
+      let recordsInResponse = 0;
       try {
         // eslint-disable-next-line no-await-in-loop
         response = await callPercipio(opts);
+      } catch (err) {
+        logger.error('ERROR: trying to download results', loggingOptions);
+        keepGoing = false;
+        reject(err);
+        break;
+      }
 
-        if (reportCount) {
-          totalRecords = parseInt(response.headers['x-total-count'], 10);
-          opts.request.query.pagingRequestId = response.headers['x-paging-request-id'];
+      if (reportCount) {
+        totalRecords = parseInt(response.headers['x-total-count'], 10);
+        opts.request.query.pagingRequestId = response.headers['x-paging-request-id'];
 
-          logger.info(
-            `Total Records to download as reported in header['x-total-count'] ${totalRecords.toLocaleString()}`,
-            loggingOptions
-          );
+        logger.info(
+          `Total Records to download as reported in header['x-total-count'] ${totalRecords.toLocaleString()}`,
+          loggingOptions
+        );
 
-          logger.info(
-            `Paging request id in header['x-paging-request-id'] ${opts.request.query.pagingRequestId}`,
-            loggingOptions
-          );
-          reportCount = false;
-        }
-        records = [...records, ...response.data];
+        logger.info(
+          `Paging request id in header['x-paging-request-id'] ${opts.request.query.pagingRequestId}`,
+          loggingOptions
+        );
+        reportCount = false;
+      }
 
-        downloadedRecords += response.data.length;
+      recordsInResponse = delve(response, 'data.length', 0);
+
+      if (recordsInResponse > 0) {
+        downloadedRecords += recordsInResponse;
 
         logger.info(
           `Records Downloaded ${downloadedRecords.toLocaleString()} of ${totalRecords.toLocaleString()}`,
           loggingOptions
         );
 
-        // Set offset - number of records in response
-        opts.request.query.offset += response.data.length;
+        records = [...records, ...response.data];
 
-        if (opts.request.query.offset >= totalRecords) {
-          keepGoing = false;
-        }
-      } catch (err) {
-        logger.error('ERROR: trying to download results', loggingOptions);
+        // Set offset - number of records in response
+        opts.request.query.offset += opts.request.query.max;
+      }
+
+      if (opts.request.query.offset >= totalRecords) {
         keepGoing = false;
-        reject(err);
       }
     }
     resolve({ data: records });
