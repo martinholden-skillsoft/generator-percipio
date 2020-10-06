@@ -128,25 +128,25 @@ const getAllPages = async (options) => {
           );
           reportCount = false;
         }
+        records = [...records, ...response.data];
+
+        downloadedRecords += response.data.length;
+
+        logger.info(
+          `Records Downloaded ${downloadedRecords.toLocaleString()} of ${totalRecords.toLocaleString()}`,
+          loggingOptions
+        );
+
+        // Set offset - number of records in response
+        opts.request.query.offset += response.data.length;
+
+        if (opts.request.query.offset >= totalRecords) {
+          keepGoing = false;
+        }
       } catch (err) {
         logger.error('ERROR: trying to download results', loggingOptions);
         keepGoing = false;
         reject(err);
-      }
-      records = [...records, ...response.data];
-
-      downloadedRecords += response.data.length;
-
-      logger.info(
-        `Records Downloaded ${downloadedRecords.toLocaleString()} of ${totalRecords.toLocaleString()}`,
-        loggingOptions
-      );
-
-      // Set offset - number of records in response
-      opts.request.query.offset += response.data.length;
-
-      if (opts.request.query.offset >= totalRecords) {
-        keepGoing = false;
       }
     }
     resolve({ data: records });
