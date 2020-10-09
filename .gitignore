@@ -78,3 +78,6 @@ typings/
 # VSCode Files
 .deployment
 .yo-rc.json
+
+# Test Client
+percipioclient/
