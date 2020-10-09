@@ -4,7 +4,9 @@ const Path = require('path');
 const _ = require('lodash');
 const mkdirp = require('mkdirp');
 const promiseRetry = require('promise-retry');
+<% if (options.percipioServiceIsPaged) { _%>
 const delve = require('dlv');
+<% } _%>
 // eslint-disable-next-line no-unused-vars
 const pkginfo = require('pkginfo')(module);
 
