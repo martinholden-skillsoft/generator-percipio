@@ -7,51 +7,53 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch (PRODUCTION)",
-      "program": "${workspaceFolder}/app.js",
-      "outputCapture": "std",
-      "env": {
-        "NODE_ENV": "PRODUCTION",
-        "ORGID": "YOURORGID",
-        "BEARER": "YOURBEARER"
-      }
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Launch (DEVELOPMENT)",
-      "program": "${workspaceFolder}/app.js",
-      "outputCapture": "std",
-      "env": {
-        "NODE_ENV": "DEVELOPMENT",
-        "ORGID": "YOURORGID",
-        "BEARER": "YOURBEARER"
-      }
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Launch (PRODUCTION EUDC)",
+      "name": "Launch (PRODUCTION - US)",
       "program": "${workspaceFolder}/app.js",
       "outputCapture": "std",
       "env": {
         "NODE_ENV": "PRODUCTION",
         "ORGID": "YOURORGID",
         "BEARER": "YOURBEARER",
-        "EUDC": "1"
+        "BASEURL": "https://api.percipio.com"
       }
     },
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch (DEVELOPMENT EUDC)",
+      "name": "Launch (DEVELOPMENT - US)",
       "program": "${workspaceFolder}/app.js",
       "outputCapture": "std",
       "env": {
         "NODE_ENV": "DEVELOPMENT",
         "ORGID": "YOURORGID",
         "BEARER": "YOURBEARER",
-        "EUDC": "1"
+        "BASEURL": "https://api.percipio.com"
+      }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch (PRODUCTION - EU)",
+      "program": "${workspaceFolder}/app.js",
+      "outputCapture": "std",
+      "env": {
+        "NODE_ENV": "PRODUCTION",
+        "ORGID": "YOURORGID",
+        "BEARER": "YOURBEARER",
+        "BASEURL": "https://dew1-api.percipio.com"
+      }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch (DEVELOPMENT - EU)",
+      "program": "${workspaceFolder}/app.js",
+      "outputCapture": "std",
+      "env": {
+        "NODE_ENV": "DEVELOPMENT",
+        "ORGID": "YOURORGID",
+        "BEARER": "YOURBEARER",
+        "BASEURL": "https://dew1-api.percipio.com"
       }
     }
   ]

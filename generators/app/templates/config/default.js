@@ -1,56 +1,53 @@
 const moment = require('moment');
+const defer = require('config/defer').deferConfig;
 
 const config = {};
 
-// Indicates a name for the configuration
-config.customer = 'none';
+config.customer = 'default';
 config.startTimestamp = moment().utc().format('YYYYMMDD_HHmmss');
 
 // DEBUG Options
 config.debug = {};
 // One of the supported default logging levels for winston - see https://github.com/winstonjs/winston#logging-levels
 config.debug.loggingLevel = 'info';
-config.debug.path = 'logs';
-config.debug.filename = `app_${config.startTimestamp}.log`;
+config.debug.path = 'results/output';
+config.debug.filename = defer((cfg) => {
+  return `${cfg.startTimestamp}_results.log`;
+});
 
-// Default for for saving the JSON output
+// Default for for saving the output
 config.output = {};
-config.output.path = 'results';
-config.output.filename = `response_${config.startTimestamp}.json`;
+config.output.path = 'results/output';
+config.output.filename = defer((cfg) => {
+  return `${cfg.startTimestamp}_results.json`;
+});
 
 // Request
 config.request = {};
-// Timeout
 // Timeout
 <% if (options.percipioServiceIsPaged) { _%>
 config.request.timeout = 20000;
 <% } else { _%>
 config.request.timeout = 2000;
 <% } _%>
+
 // Bearer Token
 config.request.bearer = null;
 // Base URI to Percipio API
-config.request.baseuri = process.env.EUDC
-  ? 'https://dew1-api.percipio.com'
-  : 'https://api.percipio.com';
+config.request.baseURL = null;
 // Request Path Parameters
 config.request.path = {};
-/**
- * Name: orgId
- * Description: Organization UUID
- * Required: true
- * Type: string
- * Format: uuid
- */
-config.request.path.orgId = null;
+<%- options.pathStrings %>
 // Request Query string Parameters
 config.request.query = {};
+<%- options.queryStrings %>
 // Request Body
-config.request.body = null;
+<%- options.payloadString %>
+<%- options.payloadPropertyStrings %>
 // Method
 config.request.method = '<%= options.percipioServiceMethod %>';
 // The Service Path
-config.request.uri = `${config.request.baseuri}<%= options.percipioServiceFullPath %>`;
+config.request.uritemplate = `<%= options.percipioServiceFullPath %>`;
 
 // Global Web Retry Options for promise retry
 // see https://github.com/IndigoUnited/node-promise-retry#readme

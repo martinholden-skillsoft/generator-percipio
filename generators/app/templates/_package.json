@@ -24,7 +24,12 @@
   "license": "MIT",
   "dependencies": {
     "axios": "^0.20.0",
-<% if (options.percipioServiceIsPaged) { _%>    "dlv": "^1.1.3",<% } _%>
+    "config": "^3.3.2",
+<% if (options.percipioServiceIsPaged) { _%>
+    "dlv": "^1.1.3",
+<% } _%>
+    "dotenv-safe": "^8.2.0",
+    "json-stringify-safe": "^5.0.1",
     "lodash": "^4.17.20",
     "mkdirp": "^1.0.4",
     "moment": "^2.29.0",

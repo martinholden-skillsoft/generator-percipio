@@ -12,17 +12,16 @@ This function returns paged data, and so all available pages of data will be ret
 1. A [Percipio Service Account](https://documentation.skillsoft.com/en_us/pes/3_services/service_accounts/pes_service_accounts.htm) with permission for accessing the API.
 
 ## Environment Configuration
-Once you have copied this repository set the following NODE ENV variables:
+Once you have copied this repository set the following NODE ENV variables, or config the [.env](.env) file
 
 | ENV | Required | Description |
 | --- | --- | --- |
 | ORGID | Required | This is the Percipio Organiation UUID for your Percipio Site. |
 | BEARER | Required | This is the Percipio Bearer token for the Service Account. |
-| EUDC | Optional | This is set to any non null value to indicate the Organization is hosted in EU Datacenter. Default: null |
+| BASEURL | Required | This is set to the base URL for the Percipio data center. For US hosted use: https://api.percipio.com For EU hosted use: https://dew1-api.percipio.com |
 
 ## Configuring the API call
-Make the config changes in the appropriate [config/config.default.js](config/config.default.js) file, to specify the request criteria for the API.
-
+Make the config changes in [config/default.js](config/default.js) file, to specify the request criteria for the API.
 
 ### Available Request Path Parameters
 

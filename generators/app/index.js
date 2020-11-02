@@ -203,12 +203,7 @@ module.exports = class extends Generator {
     this.options.percipioServiceFullPath = `${_.trimEnd(
       this.options.percipiospec.servers[0].url,
       `/`
-    )}${_.replace(
-      this.options.percipioServicePath,
-      /{/g,
-      // eslint-disable-next-line no-template-curly-in-string
-      '${config.request.path.'
-    )}`;
+    )}${this.options.percipioServicePath}`;
 
     this.options.packagename = this.slugify(this.appname);
 
@@ -270,7 +265,7 @@ module.exports = class extends Generator {
   end() {
     this.log(`Thanks for using the ${chalk.red('generator-percipio')} generator`);
     this.log(`Your app is ready, in ${chalk.green(this.destinationRoot())}.`);
-    this.log(`Don't forget to configure the ORGID and BEARER env values.`);
+    this.log(`Don't forget to configure the ORGID, BEARER and BASEURL env values.`);
     this.log(`Then you can run the app using ${chalk.yellow('npm start')}`);
   }
 };

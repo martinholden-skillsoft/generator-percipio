@@ -1,20 +1,34 @@
+const dotenvsafe = require('dotenv-safe');
+const config = require('config');
 const axios = require('axios');
 const fs = require('fs');
 const Path = require('path');
 const _ = require('lodash');
 const mkdirp = require('mkdirp');
 const promiseRetry = require('promise-retry');
+const stringifySafe = require('json-stringify-safe');
 <% if (options.percipioServiceIsPaged) { _%>
 const delve = require('dlv');
 <% } _%>
-// eslint-disable-next-line no-unused-vars
-const pkginfo = require('pkginfo')(module);
 
 const { transports } = require('winston');
 const logger = require('./lib/logger');
-const configuration = require('./config');
 
 const NODE_ENV = process.env.NODE_ENV || 'production';
+
+const pjson = require('./package.json');
+
+/**
+ * Process the URI Template strings
+ *
+ * @param {string} templateString
+ * @param {object} templateVars
+ * @return {string}
+ */
+const processTemplate = (templateString, templateVars) => {
+  const compiled = _.template(templateString.replace(/{/g, '${'));
+  return compiled(templateVars);
+};
 
 /**
  * Call Percipio API
@@ -28,21 +42,22 @@ const callPercipio = async (options) => {
       label: 'callPercipio',
     };
 
-    const requestUri = options.request.uri;
-    logger.debug(`Request URI: ${requestUri}`, loggingOptions);
+    const requestUri = processTemplate(options.request.uritemplate, options.request.path);
+    options.logger.debug(`Request URI: ${requestUri}`, loggingOptions);
 
     let requestParams = options.request.query || {};
     requestParams = _.omitBy(requestParams, _.isNil);
-    logger.debug(
-      `Request Querystring Parameters: ${JSON.stringify(requestParams)}`,
+    options.logger.debug(
+      `Request Querystring Parameters: ${stringifySafe(requestParams)}`,
       loggingOptions
     );
 
     let requestBody = options.request.body || {};
     requestBody = _.omitBy(requestBody, _.isNil);
-    logger.debug(`Request Body: ${JSON.stringify(requestBody)}`, loggingOptions);
+    options.logger.debug(`Request Body: ${stringifySafe(requestBody)}`, loggingOptions);
 
     const axiosConfig = {
+      baseURL: options.request.baseURL,
       url: requestUri,
       headers: {
         Authorization: `Bearer ${options.request.bearer}`,
@@ -59,29 +74,30 @@ const callPercipio = async (options) => {
       axiosConfig.params = requestParams;
     }
 
-    logger.debug(`Axios Config: ${JSON.stringify(axiosConfig)}`, loggingOptions);
+    options.logger.debug(`Axios Config: ${stringifySafe(axiosConfig)}`, loggingOptions);
 
     try {
       const response = await axios.request(axiosConfig);
-      logger.debug(`Response Headers: ${JSON.stringify(response.headers)}`, loggingOptions);
-      // logger.debug(`Response Body: ${JSON.stringify(response.data)}`, loggingOptions);
-
+      options.logger.debug(`Response Headers: ${stringifySafe(response.headers)}`, loggingOptions);
       return response;
     } catch (err) {
-      logger.warn(
+      options.logger.warn(
         `Trying to get report. Got Error after Attempt# ${numberOfRetries} : ${err}`,
         loggingOptions
       );
       if (err.response) {
-        logger.debug(`Response Headers: ${JSON.stringify(err.response.headers)}`, loggingOptions);
-        logger.debug(`Response Body: ${JSON.stringify(err.response.data)}`, loggingOptions);
+        options.logger.debug(
+          `Response Headers: ${stringifySafe(err.response.headers)}`,
+          loggingOptions
+        );
+        options.logger.debug(`Response Body: ${stringifySafe(err.response.data)}`, loggingOptions);
       } else {
-        logger.debug('No Response Object available', loggingOptions);
+        options.logger.debug('No Response Object available', loggingOptions);
       }
       if (numberOfRetries < options.retry_options.retries + 1) {
         retry(err);
       } else {
-        logger.error('Failed to call Percipio', loggingOptions);
+        options.logger.error('Failed to call Percipio', loggingOptions);
       }
       throw err;
     }
@@ -118,7 +134,7 @@ const getAllPages = async (options) => {
         // eslint-disable-next-line no-await-in-loop
         response = await callPercipio(opts);
       } catch (err) {
-        logger.error('ERROR: trying to download results', loggingOptions);
+        opts.logger.error('ERROR: trying to download results', loggingOptions);
         keepGoing = false;
         reject(err);
         break;
@@ -128,12 +144,12 @@ const getAllPages = async (options) => {
         totalRecords = parseInt(response.headers['x-total-count'], 10);
         opts.request.query.pagingRequestId = response.headers['x-paging-request-id'];
 
-        logger.info(
+        opts.logger.info(
           `Total Records to download as reported in header['x-total-count'] ${totalRecords.toLocaleString()}`,
           loggingOptions
         );
 
-        logger.info(
+        opts.logger.info(
           `Paging request id in header['x-paging-request-id'] ${opts.request.query.pagingRequestId}`,
           loggingOptions
         );
@@ -145,7 +161,7 @@ const getAllPages = async (options) => {
       if (recordsInResponse > 0) {
         downloadedRecords += recordsInResponse;
 
-        logger.info(
+        opts.logger.info(
           `Records Downloaded ${downloadedRecords.toLocaleString()} of ${totalRecords.toLocaleString()}`,
           loggingOptions
         );
@@ -177,16 +193,18 @@ const main = async (configOptions) => {
 
   const options = configOptions || null;
 
+  options.logger = logger;
+
   if (_.isNull(options)) {
-    logger.error('Invalid configuration', loggingOptions);
+    options.logger.error('Invalid configuration', loggingOptions);
     return false;
   }
 
   // Set logging to silly level for dev
   if (NODE_ENV.toUpperCase() === 'DEVELOPMENT') {
-    logger.level = 'silly';
+    options.logger.level = 'silly';
   } else {
-    logger.level = options.debug.loggingLevel;
+    options.logger.level = options.debug.loggingLevel;
   }
 
   // Create logging folder if one does not exist
@@ -204,7 +222,7 @@ const main = async (configOptions) => {
   }
 
   // Add logging to a file
-  logger.add(
+  options.logger.add(
     new transports.File({
       filename: Path.join(options.debug.path, options.debug.filename),
       options: {
@@ -212,22 +230,11 @@ const main = async (configOptions) => {
       },
     })
   );
+  options.logger.info(`Start ${pjson.name} - v${pjson.version}`, loggingOptions);
 
-  logger.info(`Start ${module.exports.name}`, loggingOptions);
+  options.logger.debug(`Options: ${stringifySafe(options)}`, loggingOptions);
 
-  logger.debug(`Options: ${JSON.stringify(options)}`, loggingOptions);
-
-  if (_.isNull(options.request.orgId)) {
-    logger.error('Invalid configuration - no orgid in config file or env ORGID', loggingOptions);
-    return false;
-  }
-
-  if (_.isNull(options.request.bearer)) {
-    logger.error('Invalid configuration - no bearer in config file or env BEARER', loggingOptions);
-    return false;
-  }
-
-  logger.info('Calling Percipio', loggingOptions);
+  options.logger.info('Calling Percipio', loggingOptions);
 
 <% if (options.percipioServiceIsPaged) { _%>
   // Percipio API returns a paged response, so retrieve all pages
@@ -242,19 +249,24 @@ const main = async (configOptions) => {
       let outputData = response.data;
       // Check if the response is an Object and if so JSON.stringify the output
       if (_.isObject(outputData)) {
-        outputData = JSON.stringify(response.data, null, '  ');
+        outputData = stringifySafe(response.data, null, 2);
       }
 
       fs.writeFileSync(outputFile, outputData);
 
-      logger.info(`Response saved to: ${outputFile}`, loggingOptions);
+      options.logger.info(`Response saved to: ${outputFile}`, loggingOptions);
     })
     .catch((err) => {
-      logger.error(`Error:  ${err}`, loggingOptions);
+      options.logger.error(`Error:  ${err}`, loggingOptions);
     });
 
-  logger.info(`End ${module.exports.name}`, loggingOptions);
+  options.logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
   return true;
 };
 
-main(configuration);
+try {
+  dotenvsafe.config();
+  main(config);
+} catch (error) {
+  throw new Error('A problem occurred during configuration', error.message);
+}

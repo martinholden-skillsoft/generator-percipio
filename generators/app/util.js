@@ -65,12 +65,7 @@ const parameterDescriptionString = (parameter) => {
   description.push(' */');
 
   const name = `config.request.${_.trim(parameter.in)}.${_.trim(parameter.name)}`;
-  let val =
-    parameter.in === 'path' && parameter.name === 'orgId'
-      ? 'process.env.ORGID || null'
-      : null;
-
-  val = val === null && parameter.schema.default ? parameter.schema.default : val;
+  const val = parameter.schema.default ? parameter.schema.default : null;
   description.push(`${name} = ${val};`);
   description.push('');
   return description.join('\n');
