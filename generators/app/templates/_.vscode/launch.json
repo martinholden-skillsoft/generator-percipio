@@ -7,50 +7,31 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch (PRODUCTION - US)",
+      "name": "Launch (PRODUCTION - Using .env configuration file)",
+      "program": "${workspaceFolder}/app.js",
+      "outputCapture": "std",
+      "env": {
+        "NODE_ENV": "PRODUCTION"
+      }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch (DEVELOPMENT - Using .env configuration file)",
+      "program": "${workspaceFolder}/app.js",
+      "outputCapture": "std",
+      "env": {
+        "NODE_ENV": "DEVELOPMENT"
+      }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch (PRODUCTION - Using env options from VSCODE)",
       "program": "${workspaceFolder}/app.js",
       "outputCapture": "std",
       "env": {
         "NODE_ENV": "PRODUCTION",
-        "ORGID": "YOURORGID",
-        "BEARER": "YOURBEARER",
-        "BASEURL": "https://api.percipio.com"
-      }
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Launch (DEVELOPMENT - US)",
-      "program": "${workspaceFolder}/app.js",
-      "outputCapture": "std",
-      "env": {
-        "NODE_ENV": "DEVELOPMENT",
-        "ORGID": "YOURORGID",
-        "BEARER": "YOURBEARER",
-        "BASEURL": "https://api.percipio.com"
-      }
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Launch (PRODUCTION - EU)",
-      "program": "${workspaceFolder}/app.js",
-      "outputCapture": "std",
-      "env": {
-        "NODE_ENV": "PRODUCTION",
-        "ORGID": "YOURORGID",
-        "BEARER": "YOURBEARER",
-        "BASEURL": "https://dew1-api.percipio.com"
-      }
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Launch (DEVELOPMENT - EU)",
-      "program": "${workspaceFolder}/app.js",
-      "outputCapture": "std",
-      "env": {
-        "NODE_ENV": "DEVELOPMENT",
         "ORGID": "YOURORGID",
         "BEARER": "YOURBEARER",
         "BASEURL": "https://dew1-api.percipio.com"
