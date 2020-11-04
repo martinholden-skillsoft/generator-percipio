@@ -23,7 +23,7 @@
   "author": "<%= options.author %>",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.20.0",
+    "axios": "^0.21.0",
     "config": "^3.3.2",
 <% if (options.percipioServiceIsPaged) { _%>
     "dlv": "^1.1.3",
@@ -33,16 +33,15 @@
     "lodash": "^4.17.20",
     "mkdirp": "^1.0.4",
     "moment": "^2.29.0",
-    "pkginfo": "^0.4.1",
     "promise-retry": "^2.0.1",
     "winston": "^3.2.1"
   },
   "devDependencies": {
     "auto-changelog": "^2.2.1",
     "babel-eslint": "^10.0.2",
-    "eslint": "^7.10.0",
+    "eslint": "^7.12.1",
     "eslint-config-airbnb-base": "^14.1.0",
-    "eslint-config-prettier": "^6.12.0",
+    "eslint-config-prettier": "^6.15.0",
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-prettier": "^3.1.2",
     "prettier": "^2.1.2",
