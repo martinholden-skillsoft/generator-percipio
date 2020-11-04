@@ -39,9 +39,9 @@ You will be prompted to:
 1. Select the Percipio API
 1. Select the Operation
 
-One the generator has completed running you will need to configure the parameters for the API call in the `config/config.default.js` file.
+One the generator has completed running you will need to configure the parameters for the API call in the `config/default.js` file, and either populate the `.env` file or set environment values.
 
-The config file will list all the configurable parameters and include derscriptions from the OpeanAPI definition.
+The config file will list all the configurable parameters and include derscriptions from the OpenAPI definition.
 
 ## Getting To Know Yeoman
 
