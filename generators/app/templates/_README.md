@@ -26,9 +26,9 @@ Once you have copied this repository set the following NODE ENV variables, or co
 Make the config changes in [config/default.js](config/default.js) file, to specify the request criteria for the API.
 
 ### Returned Data Location
-The returned data will be stored in the file defined in [config/default.js](config/default.js).
+The returned data will be stored in the location and with filename as defined in [config/default.js](config/default.js).
 
-The default file location is:
+The default file location and filename is:
 
 ```
 results/YYYYMMDD_hhmmss_results.json

@@ -268,5 +268,5 @@ try {
   dotenvsafe.config();
   main(config);
 } catch (error) {
-  throw new Error('A problem occurred during configuration', error.message);
+  throw new Error(`A problem occurred during configuration. ${error.message}`);
 }
