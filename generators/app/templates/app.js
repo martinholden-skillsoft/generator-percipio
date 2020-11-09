@@ -1,7 +1,7 @@
 require('dotenv-safe').config();
 
 const config = require('config');
-const axios = require('axios');
+const Axios = require('axios');
 const fs = require('fs');
 const Path = require('path');
 const _ = require('lodash');
@@ -10,13 +10,11 @@ const promiseRetry = require('promise-retry');
 const stringifySafe = require('json-stringify-safe');
 <% if (options.percipioServiceIsPaged) { _%>
 const delve = require('dlv');
+const JSONStream = require('JSONStream');
 <% } _%>
 
 const { transports } = require('winston');
 const logger = require('./lib/logger');
-
-const NODE_ENV = process.env.NODE_ENV || 'production';
-
 const pjson = require('./package.json');
 
 /**
@@ -35,9 +33,10 @@ const processTemplate = (templateString, templateVars) => {
  * Call Percipio API
  *
  * @param {*} options
+ * @param {Axios} [axiosInstance=Axios] HTTP request client that provides an Axios like interface
  * @returns
  */
-const callPercipio = async (options) => {
+const callPercipio = async (options, axiosInstance = Axios) => {
   return promiseRetry(async (retry, numberOfRetries) => {
     const loggingOptions = {
       label: 'callPercipio',
@@ -78,7 +77,7 @@ const callPercipio = async (options) => {
     options.logger.debug(`Axios Config: ${stringifySafe(axiosConfig)}`, loggingOptions);
 
     try {
-      const response = await axios.request(axiosConfig);
+      const response = await axiosInstance.request(axiosConfig);
       options.logger.debug(`Response Headers: ${stringifySafe(response.headers)}`, loggingOptions);
       return response;
     } catch (err) {
@@ -110,9 +109,10 @@ const callPercipio = async (options) => {
  * Loop thru calling the API until all pages are delivered.
  *
  * @param {*} options
+ * @param {Axios} [axiosInstance=Axios] HTTP request client that provides an Axios like interface
  * @returns {string} json file path
  */
-const getAllPages = async (options) => {
+const getAllPages = async (options, axiosInstance = Axios) => {
   // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     const loggingOptions = {
@@ -120,20 +120,44 @@ const getAllPages = async (options) => {
     };
 
     const opts = options;
-
-    let records = [];
+    const outputFile = Path.join(opts.output.path, opts.output.filename);
 
     let keepGoing = true;
     let reportCount = true;
     let totalRecords = 0;
     let downloadedRecords = 0;
 
+    const transformStream = JSONStream.stringify('[', ',', ']');
+    const outputStream = fs.createWriteStream(outputFile);
+
+    outputStream.on('error', (error) => {
+      opts.logger.error(`Error. Path: ${stringifySafe(error)}`, loggingOptions);
+    });
+
+    transformStream.on('error', (error) => {
+      opts.logger.error(`Error. Path: ${stringifySafe(error)}`, loggingOptions);
+    });
+
+    outputStream.on('finish', () => {
+      if (downloadedRecords === 0) {
+        opts.logger.info('No records downloaded', loggingOptions);
+        fs.unlinkSync(outputFile);
+      } else {
+        opts.logger.info(`Records Saved. Path: ${outputFile}`, loggingOptions);
+      }
+
+      resolve({ data: [], saved: true, outputFile });
+    });
+
+    transformStream.pipe(outputStream);
+
     while (keepGoing) {
       let response = null;
       let recordsInResponse = 0;
+
       try {
         // eslint-disable-next-line no-await-in-loop
-        response = await callPercipio(opts);
+        response = await callPercipio(opts, axiosInstance);
       } catch (err) {
         opts.logger.error('ERROR: trying to download results', loggingOptions);
         keepGoing = false;
@@ -144,12 +168,10 @@ const getAllPages = async (options) => {
       if (reportCount) {
         totalRecords = parseInt(response.headers['x-total-count'], 10);
         opts.request.query.pagingRequestId = response.headers['x-paging-request-id'];
-
         opts.logger.info(
           `Total Records to download as reported in header['x-total-count'] ${totalRecords.toLocaleString()}`,
           loggingOptions
         );
-
         opts.logger.info(
           `Paging request id in header['x-paging-request-id'] ${opts.request.query.pagingRequestId}`,
           loggingOptions
@@ -167,17 +189,24 @@ const getAllPages = async (options) => {
           loggingOptions
         );
 
-        records = [...records, ...response.data];
-
         // Set offset - number of records in response
         opts.request.query.offset += opts.request.query.max;
+
+        // Stream the results
+        // Iterate over the records and write EACH ONE to the stream individually.
+        // Each one of these records will become a JSON object in the output file.
+        response.data.forEach((record) => {
+          transformStream.write(record);
+        });
       }
 
       if (opts.request.query.offset >= totalRecords) {
         keepGoing = false;
+        // Once we've written each record in the record-set, we have to end the stream so that
+        // the TRANSFORM stream knows to output the end of the array it is generating.
+        transformStream.end();
       }
     }
-    resolve({ data: records });
   });
 };
 <% } _%>
@@ -199,13 +228,6 @@ const main = async (configOptions) => {
   if (_.isNull(options)) {
     options.logger.error('Invalid configuration', loggingOptions);
     return false;
-  }
-
-  // Set logging to silly level for dev
-  if (NODE_ENV.toUpperCase() === 'DEVELOPMENT') {
-    options.logger.level = 'silly';
-  } else {
-    options.logger.level = options.debug.loggingLevel;
   }
 
   // Create logging folder if one does not exist
@@ -237,14 +259,20 @@ const main = async (configOptions) => {
 
   options.logger.info('Calling Percipio', loggingOptions);
 
+  // Create an axios instance that this will allow us to replace
+  // axios if desired with any HTTP request client that provides
+  // an axios like interface.
+  // For example https://github.com/googleapis/gaxios
+  const axiosInstance = Axios.create();
+
 <% if (options.percipioServiceIsPaged) { _%>
   // Percipio API returns a paged response, so retrieve all pages
-  await getAllPages(options)
+  await getAllPages(options, axiosInstance)
     .then((response) => {
+      options.logger.info(`Response saved to: ${response.outputFile}`, loggingOptions);
 <% } else { _%>
-  await callPercipio(options)
+  await callPercipio(options, axiosInstance)
     .then((response) => {
-<% } _%>
       // Write the results to file.
       const outputFile = Path.join(options.output.path, options.output.filename);
       let outputData = response.data;
@@ -256,6 +284,7 @@ const main = async (configOptions) => {
       fs.writeFileSync(outputFile, outputData);
 
       options.logger.info(`Response saved to: ${outputFile}`, loggingOptions);
+<% } _%>
     })
     .catch((err) => {
       options.logger.error(`Error:  ${err}`, loggingOptions);

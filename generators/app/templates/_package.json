@@ -27,6 +27,7 @@
     "config": "^3.3.2",
 <% if (options.percipioServiceIsPaged) { _%>
     "dlv": "^1.1.3",
+    "JSONStream": "^1.3.5",
 <% } _%>
     "dotenv-safe": "^8.2.0",
     "json-stringify-safe": "^5.0.1",
