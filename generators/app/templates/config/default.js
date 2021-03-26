@@ -26,7 +26,7 @@ config.output.filename = defer((cfg) => {
 config.request = {};
 // Timeout in ms
 <% if (options.percipioServiceIsPaged) { _%>
-config.request.timeout = 20 * 1000;
+config.request.timeout = 60 * 1000;
 <% } else { _%>
 config.request.timeout = 2 * 1000;
 <% } _%>
@@ -54,7 +54,7 @@ config.request.uritemplate = `<%= options.percipioServiceFullPath %>`;
 config.rax = {};
 // Retry 3 times on requests that return a response (500, etc) before giving up.
 config.rax.retry = 3;
-// Retry twice on errors that don't return a response (ENOTFOUND, ETIMEDOUT, etc).
+// Retry 2 times on errors that don't return a response (ENOTFOUND, ETIMEDOUT, etc).
 config.rax.noResponseRetries = 2;
 // You can set the backoff type.
 // options are 'exponential' (default), 'static' or 'linear'
