@@ -4,10 +4,9 @@ const httpAdapter = require('axios/lib/adapters/http');
 const settle = require('axios/lib/core/settle');
 const createError = require('axios/lib/core/createError');
 const utils = require('axios/lib/utils');
-const { accessSafe } = require('access-safe');
 const { v4: uuidv4 } = require('uuid');
-const nullLogger = require('./nulllogger');
 const stringifySafe = require('json-stringify-safe');
+const nullLogger = require('./nulllogger');
 
 /**
  * Axios Adapter thats adds timing metrics and correlationid
@@ -35,7 +34,9 @@ const timingAdapter = (config) => {
 
     httpAdapter(config)
       .then((response) => {
-        const receivedTime = accessSafe(() => new Date(response.headers.date), new Date());
+        // Always use machine time instead of response.headers.date asthis ensures skew
+        // Doesnt affect timings
+        const receivedTime = new Date();
         response.timings = {
           sent: sendTime,
           received: receivedTime,
