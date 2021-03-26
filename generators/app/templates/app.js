@@ -106,19 +106,19 @@ const getRecordCount = (options, axiosInstance = Axios) => {
     callPercipio(opts, axiosInstance)
       .then((response) => {
         results.total = parseInt(response.headers['x-total-count'], 10);
-        results.pagingRequestId = response.headers['x-paging-request-id'];
-        logger.info(
-          `Total Records to download as reported in header['x-total-count'] ${results.total.toLocaleString()}`,
-          loggingOptions
-        );
-        logger.info(
-          `Paging request id in header['x-paging-request-id'] ${results.pagingRequestId}`,
-          loggingOptions
-        );
+        results.pagingRequestId = response.headers['x-paging-request-id'] || null;
+
+        const message = [];
+        message.push(`Total Records ['x-total-count']: ${results.total.toLocaleString()}`);
+
+        if (results.pagingRequestId !== null) {
+          message.push(`Paging request id ['x-paging-request-id']: ${results.pagingRequestId}`);
+        }
+        logger.info(`${message.join(' ')}`, loggingOptions);
         resolve(results);
       })
       .catch((err) => {
-        logger.error(`${err}`, loggingOptions);
+        logger.error(err, loggingOptions);
         reject(err);
       });
   });
@@ -174,7 +174,7 @@ const getPage = (options, offset, processChain = new Combiner([]), axiosInstance
         }
       })
       .catch((err) => {
-        logger.error(`CorrelationId: ${err.config.correlationid}. ${err.message}`, loggingOptions);
+        logger.error(err, loggingOptions);
         reject(err);
       });
   });
@@ -206,14 +206,14 @@ const getAllPages = (options, maxrecords, axiosInstance = Axios) => {
       outputStream.write(Buffer.from('\uFEFF'));
     }
 
-    outputStream.on('error', (error) => {
-      logger.error(`Error. Path: ${stringifySafe(error)}`, loggingOptions);
-      reject(error);
+    outputStream.on('error', (err) => {
+      logger.error(err, loggingOptions);
+      reject(err);
     });
 
-    jsonStream.on('error', (error) => {
-      logger.error(`Error. Path: ${stringifySafe(error)}`, loggingOptions);
-      reject(error);
+    jsonStream.on('error', (err) => {
+      logger.error(err, loggingOptions);
+      reject(err);
     });
 
     outputStream.on('finish', () => {
@@ -234,9 +234,9 @@ const getAllPages = (options, maxrecords, axiosInstance = Axios) => {
     });
 
     const chain = new Combiner([jsonStream, outputStream]);
-    chain.on('error', (error) => {
-      logger.error(`Error. Path: ${stringifySafe(error)}`, loggingOptions);
-      reject(error);
+    chain.on('error', (err) => {
+      logger.error(err, loggingOptions);
+      reject(err);
     });
 
     const requests = [];
@@ -257,7 +257,7 @@ const getAllPages = (options, maxrecords, axiosInstance = Axios) => {
         chain.end();
       })
       .catch((err) => {
-        logger.error(`${err}`, loggingOptions);
+        logger.error(err, loggingOptions);
         reject(err);
       });
   });
@@ -328,21 +328,34 @@ const main = (configOptions) => {
       // retry attempts have been made
       onRetryAttempt: (err) => {
         const raxcfg = rax.getConfig(err);
-        logger.warn(
-          `CorrelationId: ${err.config.correlationid}. Retry attempt #${raxcfg.currentRetryAttempt}`,
-          {
-            label: 'onRetryAttempt',
-          }
-        );
+        const message = [];
+        message.push(`CorrelationId: ${err.config.correlationid}.`);
+        message.push(`${err.code}:${err.message}.`);
+        message.push(`Retry attempt #${raxcfg.currentRetryAttempt}.`);
+
+        logger.warn(`${message.join(' ')}`, {
+          label: 'onRetryAttempt',
+        });
       },
       // Override the decision making process on if you should retry
       shouldRetry: (err) => {
         const cfg = rax.getConfig(err);
         // ensure max retries is always respected
         if (cfg.currentRetryAttempt >= cfg.retry) {
-          logger.error(`CorrelationId: ${err.config.correlationid}. Maximum retries reached.`, {
+          logger.warn(`CorrelationId: ${err.config.correlationid}. Maximum retries reached.`, {
             label: `shouldRetry`,
           });
+          return false;
+        }
+
+        // ensure max retries for NO RESPONSE errors is always respected
+        if (cfg.currentRetryAttempt >= cfg.noResponseRetries) {
+          logger.warn(
+            `CorrelationId: ${err.config.correlationid}. Maximum retries reached for No Response Errors.`,
+            {
+              label: `shouldRetry`,
+            }
+          );
           return false;
         }
 <% if (options.percipioServiceIsPaged) { _%>
@@ -363,7 +376,7 @@ const main = (configOptions) => {
         if (rax.shouldRetryRequest(err)) {
           return true;
         }
-        logger.error(`CorrelationId: ${err.config.correlationid}. None retryable error.`, {
+        logger.warn(`CorrelationId: ${err.config.correlationid}. None retryable error.`, {
           label: `shouldRetry`,
         });
         return false;
@@ -385,7 +398,7 @@ const main = (configOptions) => {
             logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
           })
           .catch((err) => {
-            logger.error(`Error:  ${err}`, loggingOptions);
+            logger.error(err, loggingOptions);
           });
       } else {
         logger.info('No records to download', loggingOptions);
@@ -393,7 +406,7 @@ const main = (configOptions) => {
       }
     })
     .catch((err) => {
-      logger.error(`Error:  ${err}`, loggingOptions);
+      logger.error(err, loggingOptions);
       logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
     });
 <% } else { _%>
@@ -413,7 +426,7 @@ const main = (configOptions) => {
       logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
     })
     .catch((err) => {
-      options.logger.error(`Error:  ${err}`, loggingOptions);
+      logger.error(err, loggingOptions);
       logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
     });
 <% } _%>
