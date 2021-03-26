@@ -52,4 +52,4 @@ The config file will list all the configurable parameters and include derscripti
 
 ## License
 
-MIT © Martin Holden 2019-2020
+MIT © Martin Holden 2019-2021
