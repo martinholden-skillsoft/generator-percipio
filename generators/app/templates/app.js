@@ -6,16 +6,19 @@ const fs = require('fs');
 const Path = require('path');
 const _ = require('lodash');
 const mkdirp = require('mkdirp');
-const promiseRetry = require('promise-retry');
+const rateLimit = require('axios-rate-limit');
+const rax = require('retry-axios');
 const stringifySafe = require('json-stringify-safe');
+const { v4: uuidv4 } = require('uuid');
 <% if (options.percipioServiceIsPaged) { _%>
-const delve = require('dlv');
+const { accessSafe } = require('access-safe');
 const JSONStream = require('JSONStream');
+const Combiner = require('stream-combiner');
 <% } _%>
-
 const { transports } = require('winston');
 const logger = require('./lib/logger');
 const pjson = require('./package.json');
+const timingAdapter = require('./lib/timingAdapter');
 
 /**
  * Process the URI Template strings
@@ -34,36 +37,29 @@ const processTemplate = (templateString, templateVars) => {
  *
  * @param {*} options
  * @param {Axios} [axiosInstance=Axios] HTTP request client that provides an Axios like interface
- * @returns
+ * @returns {Promise}
  */
-const callPercipio = async (options, axiosInstance = Axios) => {
-  return promiseRetry(async (retry, numberOfRetries) => {
-    const loggingOptions = {
-      label: 'callPercipio',
-    };
+const callPercipio = (options, axiosInstance = Axios) => {
+  return new Promise((resolve, reject) => {
+    const opts = _.cloneDeep(options);
+    const requestUri = processTemplate(opts.request.uritemplate, opts.request.path);
 
-    const requestUri = processTemplate(options.request.uritemplate, options.request.path);
-    options.logger.debug(`Request URI: ${requestUri}`, loggingOptions);
-
-    let requestParams = options.request.query || {};
+    let requestParams = opts.request.query || {};
     requestParams = _.omitBy(requestParams, _.isNil);
-    options.logger.debug(
-      `Request Querystring Parameters: ${stringifySafe(requestParams)}`,
-      loggingOptions
-    );
 
-    let requestBody = options.request.body || {};
+    let requestBody = opts.request.body || {};
     requestBody = _.omitBy(requestBody, _.isNil);
-    options.logger.debug(`Request Body: ${stringifySafe(requestBody)}`, loggingOptions);
 
     const axiosConfig = {
-      baseURL: options.request.baseURL,
+      baseURL: opts.request.baseURL,
       url: requestUri,
       headers: {
-        Authorization: `Bearer ${options.request.bearer}`,
+        Authorization: `Bearer ${opts.request.bearer}`,
       },
-      method: options.request.method,
-      timeout: options.request.timeout || 2000,
+      method: opts.request.method,
+      timeout: opts.request.timeout || 2000,
+      correlationid: uuidv4(),
+      logger,
     };
 
     if (!_.isEmpty(requestBody)) {
@@ -74,141 +70,199 @@ const callPercipio = async (options, axiosInstance = Axios) => {
       axiosConfig.params = requestParams;
     }
 
-    options.logger.debug(`Axios Config: ${stringifySafe(axiosConfig)}`, loggingOptions);
-
-    try {
-      const response = await axiosInstance.request(axiosConfig);
-      options.logger.debug(`Response Headers: ${stringifySafe(response.headers)}`, loggingOptions);
-      return response;
-    } catch (err) {
-      options.logger.warn(
-        `Trying to get report. Got Error after Attempt# ${numberOfRetries} : ${err}`,
-        loggingOptions
-      );
-      if (err.response) {
-        options.logger.debug(
-          `Response Headers: ${stringifySafe(err.response.headers)}`,
-          loggingOptions
-        );
-        options.logger.debug(`Response Body: ${stringifySafe(err.response.data)}`, loggingOptions);
-      } else {
-        options.logger.debug('No Response Object available', loggingOptions);
-      }
-      if (numberOfRetries < options.retry_options.retries + 1) {
-        retry(err);
-      } else {
-        options.logger.error('Failed to call Percipio', loggingOptions);
-      }
-      throw err;
-    }
-  }, options.retry_options);
+    axiosInstance
+      .request(axiosConfig)
+      .then((response) => {
+        resolve(response);
+      })
+      .catch((err) => {
+        reject(err);
+      });
+  });
 };
 
 <% if (options.percipioServiceIsPaged) { _%>
 /**
- * Loop thru calling the API until all pages are delivered.
+ * Request one item so we can get count
  *
  * @param {*} options
  * @param {Axios} [axiosInstance=Axios] HTTP request client that provides an Axios like interface
- * @returns {string} json file path
+ * @returns {Promise} Promise object resolves to obect with total and pagingRequestId.
  */
-const getAllPages = async (options, axiosInstance = Axios) => {
-  // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async (resolve, reject) => {
+const getRecordCount = (options, axiosInstance = Axios) => {
+  return new Promise((resolve, reject) => {
+    const loggingOptions = {
+      label: 'getRecordCount',
+    };
+
+    const opts = _.cloneDeep(options);
+    opts.request.query.max = 1;
+
+    const results = {
+      total: null,
+      pagingRequestId: null,
+    };
+
+    callPercipio(opts, axiosInstance)
+      .then((response) => {
+        results.total = parseInt(response.headers['x-total-count'], 10);
+        results.pagingRequestId = response.headers['x-paging-request-id'];
+        logger.info(
+          `Total Records to download as reported in header['x-total-count'] ${results.total.toLocaleString()}`,
+          loggingOptions
+        );
+        logger.info(
+          `Paging request id in header['x-paging-request-id'] ${results.pagingRequestId}`,
+          loggingOptions
+        );
+        resolve(results);
+      })
+      .catch((err) => {
+        logger.error(`${err}`, loggingOptions);
+        reject(err);
+      });
+  });
+};
+
+/**
+ * Calling the API to retrieve and process page.
+ *
+ * @param {*} options
+ * @param {Number} offset the offset position of the page
+ * @param {Combiner} [processChain=new Combiner([])] the processing stream for the results
+ * @param {Axios} [axiosInstance=Axios] HTTP request client that provides an Axios like interface
+ * @returns {Promise} Resolves to number of records processed
+ */
+const getPage = (options, offset, processChain = new Combiner([]), axiosInstance = Axios) => {
+  return new Promise((resolve, reject) => {
+    const loggingOptions = {
+      label: 'getPage',
+    };
+
+    const opts = _.cloneDeep(options);
+    opts.request.query.offset = offset;
+
+    callPercipio(opts, axiosInstance)
+      .then((response) => {
+        const result = {
+          count: accessSafe(() => response.data.length, 0),
+          start: accessSafe(() => response.config.params.offset, 0),
+          end:
+            accessSafe(() => response.config.params.offset, 0) +
+            accessSafe(() => response.config.params.max, 0),
+          durationms: accessSafe(() => response.timings.durationms, null),
+          sent: accessSafe(() => response.timings.sent.toISOString(), null),
+          correlationid: accessSafe(() => response.config.correlationid, null),
+        };
+
+        const message = [];
+        message.push(`CorrelationId: ${result.correlationid}.`);
+        message.push(
+          `Records Requested: ${result.start.toLocaleString()} to ${result.end.toLocaleString()}.`
+        );
+        message.push(`Duration ms: ${result.durationms}.`);
+        message.push(`Records Returned: ${result.count.toLocaleString()}.`);
+        logger.info(`${message.join(' ')}`, loggingOptions);
+
+        if (result.count > 0) {
+          response.data.forEach((record) => {
+            processChain.write(record);
+          });
+          resolve(result);
+        } else {
+          resolve(result);
+        }
+      })
+      .catch((err) => {
+        logger.error(`CorrelationId: ${err.config.correlationid}. ${err.message}`, loggingOptions);
+        reject(err);
+      });
+  });
+};
+
+/**
+ * Loop thru calling the API until all pages are delivered.
+ *
+ * @param {*} options
+ * @param {int} maxrecords The total number of records to retrieve
+ * @param {Axios} [axiosInstance=Axios] HTTP request client that provides an Axios like interface
+ * @returns {Promise} resolves to boolean to indicate if results saved and the filename
+ */
+const getAllPages = (options, maxrecords, axiosInstance = Axios) => {
+  return new Promise((resolve, reject) => {
     const loggingOptions = {
       label: 'getAllPages',
     };
 
-    const opts = options;
+    const opts = _.cloneDeep(options);
     const outputFile = Path.join(opts.output.path, opts.output.filename);
 
-    let keepGoing = true;
-    let reportCount = true;
-    let totalRecords = 0;
     let downloadedRecords = 0;
 
-    const transformStream = JSONStream.stringify('[', ',', ']');
+    const jsonStream = JSONStream.stringify('[', ',', ']');
     const outputStream = fs.createWriteStream(outputFile);
 
+    if (opts.includeBOM) {
+      outputStream.write(Buffer.from('\uFEFF'));
+    }
+
     outputStream.on('error', (error) => {
-      opts.logger.error(`Error. Path: ${stringifySafe(error)}`, loggingOptions);
+      logger.error(`Error. Path: ${stringifySafe(error)}`, loggingOptions);
+      reject(error);
     });
 
-    transformStream.on('error', (error) => {
-      opts.logger.error(`Error. Path: ${stringifySafe(error)}`, loggingOptions);
+    jsonStream.on('error', (error) => {
+      logger.error(`Error. Path: ${stringifySafe(error)}`, loggingOptions);
+      reject(error);
     });
 
     outputStream.on('finish', () => {
+      let saved = false;
       if (downloadedRecords === 0) {
-        opts.logger.info('No records downloaded', loggingOptions);
+        logger.info('No records downloaded', loggingOptions);
         fs.unlinkSync(outputFile);
       } else {
-        opts.logger.info(`Records Saved. Path: ${outputFile}`, loggingOptions);
+        logger.info(
+          `Total Records Downloaded: ${downloadedRecords.toLocaleString()}`,
+          loggingOptions
+        );
+        saved = true;
+        logger.info(`Records Saved. Path: ${outputFile}`, loggingOptions);
       }
 
-      resolve({ data: [], saved: true, outputFile });
+      resolve({ saved, outputFile });
     });
 
-    transformStream.pipe(outputStream);
+    const chain = new Combiner([jsonStream, outputStream]);
+    chain.on('error', (error) => {
+      logger.error(`Error. Path: ${stringifySafe(error)}`, loggingOptions);
+      reject(error);
+    });
 
-    while (keepGoing) {
-      let response = null;
-      let recordsInResponse = 0;
+    const requests = [];
+    for (let index = 0; index <= maxrecords; index += opts.request.query.max) {
+      requests.push(getPage(opts, index, chain, axiosInstance));
+    }
 
-      try {
-        // eslint-disable-next-line no-await-in-loop
-        response = await callPercipio(opts, axiosInstance);
-      } catch (err) {
-        opts.logger.error('ERROR: trying to download results', loggingOptions);
-        keepGoing = false;
-        reject(err);
-        break;
-      }
+    Promise.allSettled(requests)
+      .then((data) => {
+        logger.debug(`Results. ${stringifySafe(data)}`, loggingOptions);
+        downloadedRecords = data.reduce((total, currentValue) => {
+          const count = accessSafe(() => currentValue.value.count, 0);
+          return total + count;
+        }, 0);
 
-      if (reportCount) {
-        totalRecords = parseInt(response.headers['x-total-count'], 10);
-        opts.request.query.pagingRequestId = response.headers['x-paging-request-id'];
-        opts.logger.info(
-          `Total Records to download as reported in header['x-total-count'] ${totalRecords.toLocaleString()}`,
-          loggingOptions
-        );
-        opts.logger.info(
-          `Paging request id in header['x-paging-request-id'] ${opts.request.query.pagingRequestId}`,
-          loggingOptions
-        );
-        reportCount = false;
-      }
-
-      recordsInResponse = delve(response, 'data.length', 0);
-
-      if (recordsInResponse > 0) {
-        downloadedRecords += recordsInResponse;
-
-        opts.logger.info(
-          `Records Downloaded ${downloadedRecords.toLocaleString()} of ${totalRecords.toLocaleString()}`,
-          loggingOptions
-        );
-
-        // Set offset - number of records in response
-        opts.request.query.offset += opts.request.query.max;
-
-        // Stream the results
-        // Iterate over the records and write EACH ONE to the stream individually.
-        // Each one of these records will become a JSON object in the output file.
-        response.data.forEach((record) => {
-          transformStream.write(record);
-        });
-      }
-
-      if (opts.request.query.offset >= totalRecords) {
-        keepGoing = false;
         // Once we've written each record in the record-set, we have to end the stream so that
         // the TRANSFORM stream knows to output the end of the array it is generating.
-        transformStream.end();
-      }
-    }
+        chain.end();
+      })
+      .catch((err) => {
+        logger.error(`${err}`, loggingOptions);
+        reject(err);
+      });
   });
 };
+
 <% } _%>
 /**
  * Process the Percipio call
@@ -216,7 +270,7 @@ const getAllPages = async (options, axiosInstance = Axios) => {
  * @param {*} options
  * @returns
  */
-const main = async (configOptions) => {
+const main = (configOptions) => {
   const loggingOptions = {
     label: 'main',
   };
@@ -260,18 +314,90 @@ const main = async (configOptions) => {
   options.logger.info('Calling Percipio', loggingOptions);
 
   // Create an axios instance that this will allow us to replace
-  // axios if desired with any HTTP request client that provides
-  // an axios like interface.
-  // For example https://github.com/googleapis/gaxios
-  const axiosInstance = Axios.create();
+  // with ratelimiting
+  // see https://github.com/aishek/axios-rate-limit
+  const axiosInstance = rateLimit(Axios.create({ adapter: timingAdapter }), options.ratelimit);
+
+  // Add Axios Retry
+  // see https://github.com/JustinBeckwith/retry-axios
+  axiosInstance.defaults.raxConfig = _.merge(
+    {},
+    {
+      instance: axiosInstance,
+      // You can detect when a retry is happening, and figure out how many
+      // retry attempts have been made
+      onRetryAttempt: (err) => {
+        const raxcfg = rax.getConfig(err);
+        logger.warn(
+          `CorrelationId: ${err.config.correlationid}. Retry attempt #${raxcfg.currentRetryAttempt}`,
+          {
+            label: 'onRetryAttempt',
+          }
+        );
+      },
+      // Override the decision making process on if you should retry
+      shouldRetry: (err) => {
+        const cfg = rax.getConfig(err);
+        // ensure max retries is always respected
+        if (cfg.currentRetryAttempt >= cfg.retry) {
+          logger.error(`CorrelationId: ${err.config.correlationid}. Maximum retries reached.`, {
+            label: `shouldRetry`,
+          });
+          return false;
+        }
+<% if (options.percipioServiceIsPaged) { _%>
+
+        // Always retry if response was not JSON
+        if (err.message.includes('Request did not return JSON')) {
+          logger.warn(
+            `CorrelationId: ${err.config.correlationid}. Request did not return JSON. Retrying.`,
+            {
+              label: `shouldRetry`,
+            }
+          );
+          return true;
+        }
+<% } _%>
+
+        // Handle the request based on your other config options, e.g. `statusCodesToRetry`
+        if (rax.shouldRetryRequest(err)) {
+          return true;
+        }
+        logger.error(`CorrelationId: ${err.config.correlationid}. None retryable error.`, {
+          label: `shouldRetry`,
+        });
+        return false;
+      },
+    },
+    options.rax
+  );
+  rax.attach(axiosInstance);
 
 <% if (options.percipioServiceIsPaged) { _%>
-  // Percipio API returns a paged response, so retrieve all pages
-  await getAllPages(options, axiosInstance)
+  getRecordCount(options, axiosInstance)
     .then((response) => {
-      options.logger.info(`Response saved to: ${response.outputFile}`, loggingOptions);
+      // Percipio API returns a paged response, so retrieve all pages
+      options.request.query.pagingRequestId = response.pagingRequestId;
+
+      if (response.total > 0) {
+        getAllPages(options, response.total, axiosInstance)
+          .then(() => {
+            logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
+          })
+          .catch((err) => {
+            logger.error(`Error:  ${err}`, loggingOptions);
+          });
+      } else {
+        logger.info('No records to download', loggingOptions);
+        logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
+      }
+    })
+    .catch((err) => {
+      logger.error(`Error:  ${err}`, loggingOptions);
+      logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
+    });
 <% } else { _%>
-  await callPercipio(options, axiosInstance)
+  callPercipio(options, axiosInstance)
     .then((response) => {
       // Write the results to file.
       const outputFile = Path.join(options.output.path, options.output.filename);
@@ -284,13 +410,13 @@ const main = async (configOptions) => {
       fs.writeFileSync(outputFile, outputData);
 
       options.logger.info(`Response saved to: ${outputFile}`, loggingOptions);
-<% } _%>
+      logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
     })
     .catch((err) => {
       options.logger.error(`Error:  ${err}`, loggingOptions);
+      logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
     });
-
-  options.logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
+<% } _%>
   return true;
 };
 
