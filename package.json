@@ -27,22 +27,23 @@
 		"changelog": "rimraf CHANGELOG.md && auto-changelog --template keepachangelog && git add . && git commit . -m changelog && git push"
 	},
 	"dependencies": {
-		"chalk": "^4.1.0",
+		"access-safe": "^0.1.0",
+		"chalk": "^4.1.1",
 		"glob": "^7.1.6",
 		"lodash": "^4.17.21",
 		"mkdirp": "^1.0.4",
-		"swagger-client": "^3.13.1",
+		"swagger-client": "^3.13.2",
 		"word-wrap": "^1.2.3",
 		"yeoman-generator": "^4.12.0"
 	},
 	"devDependencies": {
 		"auto-changelog": "^2.2.1",
 		"babel-eslint": "^10.1.0",
-		"eslint": "^7.22.0",
+		"eslint": "^7.25.0",
 		"eslint-config-airbnb-base": "^14.2.1",
-		"eslint-config-prettier": "^7.1.0",
+		"eslint-config-prettier": "^8.3.0",
 		"eslint-plugin-import": "^2.22.1",
-		"eslint-plugin-prettier": "^3.3.1",
+		"eslint-plugin-prettier": "^3.4.0",
 		"prettier": "^2.2.1",
 		"rimraf": "^3.0.2",
 		"yo": "^3.1.1"

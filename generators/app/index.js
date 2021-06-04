@@ -6,6 +6,7 @@ const glob = require('glob');
 const _ = require('lodash');
 const Swagger = require('swagger-client');
 const mkdirp = require('mkdirp');
+const { accessSafe } = require('access-safe');
 
 const { parameterDescriptionString, propertyDescriptionString } = require('./util');
 
@@ -176,6 +177,19 @@ module.exports = class extends Generator {
         'properties',
       ]);
 
+      this.options.percipioService200ResponseSchema = _.get(
+        this.options.percipiospec.paths,
+        [
+          this.options.percipioServicePath,
+          this.options.percipioServiceMethod,
+          'responses',
+          '200',
+          'content',
+          'application/json',
+          'schema',
+        ]
+      );
+
       // Check if this is pagable response.
       // We examine the query parameters for parameters named max or offset or pagingRequestId
       // If any of these exist we flag as a pagable API
@@ -186,6 +200,35 @@ module.exports = class extends Generator {
             (o.name === 'max' || o.name === 'offset' || o.name === 'pagingRequestId')
           );
         }).length > 0;
+
+      // Check if this is a generate/poll API.
+      // We examine the response type to see if it ends with:
+      // #/components/schemas/ReportRequest
+      // #/components/schemas/BatchRequest
+
+      this.options.percipioServiceIsReportPoll = accessSafe(
+        () =>
+          _.endsWith(
+            this.options.percipioService200ResponseSchema.$$ref,
+            '#/components/schemas/ReportRequest'
+          ),
+        false
+      );
+
+      this.options.percipioServiceIsUserBatchRequestPoll = accessSafe(
+        () =>
+          _.endsWith(
+            this.options.percipioService200ResponseSchema.items.$$ref,
+            '#/components/schemas/BatchRequest'
+          ),
+        false
+      );
+
+      this.options.percipioServiceSingleResponse = !(
+        this.options.percipioServiceIsReportPoll ||
+        this.options.percipioServiceIsUserBatchRequestPoll ||
+        this.options.percipioServiceIsPaged
+      );
     });
   }
 

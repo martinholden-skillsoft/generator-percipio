@@ -318,118 +318,16 @@ const main = (configOptions) => {
   // see https://github.com/aishek/axios-rate-limit
   const axiosInstance = rateLimit(Axios.create({ adapter: timingAdapter }), options.ratelimit);
 
-  // Add Axios Retry
-  // see https://github.com/JustinBeckwith/retry-axios
-  axiosInstance.defaults.raxConfig = _.merge(
-    {},
-    {
-      instance: axiosInstance,
-      // You can detect when a retry is happening, and figure out how many
-      // retry attempts have been made
-      onRetryAttempt: (err) => {
-        const raxcfg = rax.getConfig(err);
-        const message = [];
-        message.push(`CorrelationId: ${err.config.correlationid}.`);
-        message.push(`${err.code}:${err.message}.`);
-        message.push(`Retry attempt #${raxcfg.currentRetryAttempt}.`);
-
-        logger.warn(`${message.join(' ')}`, {
-          label: 'onRetryAttempt',
-        });
-      },
-      // Override the decision making process on if you should retry
-      shouldRetry: (err) => {
-        const cfg = rax.getConfig(err);
-        // ensure max retries is always respected
-        if (cfg.currentRetryAttempt >= cfg.retry) {
-          logger.warn(`CorrelationId: ${err.config.correlationid}. Maximum retries reached.`, {
-            label: `shouldRetry`,
-          });
-          return false;
-        }
-
-        // ensure max retries for NO RESPONSE errors is always respected
-        if (cfg.currentRetryAttempt >= cfg.noResponseRetries) {
-          logger.warn(
-            `CorrelationId: ${err.config.correlationid}. Maximum retries reached for No Response Errors.`,
-            {
-              label: `shouldRetry`,
-            }
-          );
-          return false;
-        }
 <% if (options.percipioServiceIsPaged) { _%>
-
-        // Always retry if response was not JSON
-        if (err.message.includes('Request did not return JSON')) {
-          logger.warn(
-            `CorrelationId: ${err.config.correlationid}. Request did not return JSON. Retrying.`,
-            {
-              label: `shouldRetry`,
-            }
-          );
-          return true;
-        }
+<%- include('./../../common/templates/callpercipio/pagedresponse') %>
+<% } _%>
+<% if (options.percipioServiceIsReportPoll) { _%>
+<%- include('./../../common/templates/callpercipio/jsonresponse') %>
+<% } _%>
+<% if (options.percipioServiceSingleResponse ) { _%>
+<%- include('./../../common/templates/callpercipio/jsonresponse') %>
 <% } _%>
 
-        // Handle the request based on your other config options, e.g. `statusCodesToRetry`
-        if (rax.shouldRetryRequest(err)) {
-          return true;
-        }
-        logger.warn(`CorrelationId: ${err.config.correlationid}. None retryable error.`, {
-          label: `shouldRetry`,
-        });
-        return false;
-      },
-    },
-    options.rax
-  );
-  rax.attach(axiosInstance);
-
-<% if (options.percipioServiceIsPaged) { _%>
-  getRecordCount(options, axiosInstance)
-    .then((response) => {
-      // Percipio API returns a paged response, so retrieve all pages
-      options.request.query.pagingRequestId = response.pagingRequestId;
-
-      if (response.total > 0) {
-        getAllPages(options, response.total, axiosInstance)
-          .then(() => {
-            logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
-          })
-          .catch((err) => {
-            logger.error(err, loggingOptions);
-          });
-      } else {
-        logger.info('No records to download', loggingOptions);
-        logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
-      }
-    })
-    .catch((err) => {
-      logger.error(err, loggingOptions);
-      logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
-    });
-<% } else { _%>
-  callPercipio(options, axiosInstance)
-    .then((response) => {
-      // Write the results to file.
-      const outputFile = Path.join(options.output.path, options.output.filename);
-      let outputData = response.data;
-      // Check if the response is an Object and if so JSON.stringify the output
-      if (_.isObject(outputData)) {
-        outputData = stringifySafe(response.data, null, 2);
-      }
-
-      fs.writeFileSync(outputFile, outputData);
-
-      options.logger.info(`Response saved to: ${outputFile}`, loggingOptions);
-      logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
-    })
-    .catch((err) => {
-      logger.error(err, loggingOptions);
-      logger.info(`End ${pjson.name} - v${pjson.version}`, loggingOptions);
-    });
-<% } _%>
   return true;
 };
 
