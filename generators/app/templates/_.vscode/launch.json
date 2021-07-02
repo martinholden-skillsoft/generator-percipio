@@ -34,7 +34,8 @@
         "NODE_ENV": "PRODUCTION",
         "ORGID": "YOURORGID",
         "BEARER": "YOURBEARER",
-        "BASEURL": "https://dew1-api.percipio.com"
+        "BASEURL": "https://api.percipio.com",
+        "LOG_LEVEL": "INFO"
       }
     }
   ]
